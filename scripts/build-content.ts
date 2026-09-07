@@ -97,6 +97,36 @@ async function readTopicFiles(): Promise<{ file: string; questions: Question[] }
   return result
 }
 
+/**
+ * Правильный ответ не должен залипать на одной позиции: иначе тренажёр учит
+ * не материалу, а привычке жать одну и ту же клавишу. Порядок вариантов в
+ * JSON — то, что видит пользователь, поэтому проверяем именно его.
+ */
+function assertAnswersAreMixed(questions: Question[]): void {
+  const MIN_SAMPLE = 8
+  const MAX_SHARE = 0.5
+
+  if (questions.length < MIN_SAMPLE) return
+
+  const byPosition = new Map<number, number>()
+  for (const question of questions) {
+    const position = question.options.findIndex((o) => o.id === question.correctOptionId) + 1
+    byPosition.set(position, (byPosition.get(position) ?? 0) + 1)
+  }
+
+  for (const [position, count] of byPosition) {
+    const share = count / questions.length
+    if (share > MAX_SHARE) {
+      const percent = Math.round(share * 100)
+      throw new ContentError(
+        `Правильный ответ слишком часто стоит на позиции ${position}: ` +
+          `${count} из ${questions.length} (${percent}%, допустимо не больше ${MAX_SHARE * 100}%). ` +
+          `Перемешайте варианты — иначе тренажёр учит нажимать одну клавишу.`,
+      )
+    }
+  }
+}
+
 function assertGloballyUnique(questions: Question[]): void {
   const seen = new Map<string, number>()
   for (const question of questions) {
@@ -112,6 +142,7 @@ async function main(): Promise<void> {
   const files = await readTopicFiles()
   const questions = files.flatMap((entry) => entry.questions)
   assertGloballyUnique(questions)
+  assertAnswersAreMixed(questions)
 
   const highlighter = await createHighlighter({
     themes: [SHIKI_THEME],
