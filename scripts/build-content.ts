@@ -127,6 +127,42 @@ function assertAnswersAreMixed(questions: Question[]): void {
   }
 }
 
+/**
+ * Разбор неверного варианта не должен ссылаться на позицию верного ответа.
+ * Такое случается, когда варианты переставили, а ссылки вида **(2)** в тексте
+ * остались от прежнего порядка — читателю разбор начинает противоречить.
+ */
+function assertReferencesMatchOrder(questions: Question[]): void {
+  const problems: string[] = []
+
+  for (const question of questions) {
+    const correctPosition =
+      question.options.findIndex((o) => o.id === question.correctOptionId) + 1
+    const parts = [...question.distractors, question.footnote ?? '']
+
+    for (const part of parts) {
+      for (const match of part.matchAll(/\*\*\((\d)\)\*\*/g)) {
+        const referenced = Number(match[1])
+        if (referenced === correctPosition) {
+          problems.push(
+            `  ${question.id}: разбор неверных вариантов ссылается на позицию ${referenced}, ` +
+              `а там стоит верный ответ`,
+          )
+        }
+        if (referenced < 1 || referenced > question.options.length) {
+          problems.push(
+            `  ${question.id}: ссылка на позицию ${referenced}, а вариантов ${question.options.length}`,
+          )
+        }
+      }
+    }
+  }
+
+  if (problems.length > 0) {
+    throw new ContentError(`Разбор разъехался с порядком вариантов:\n${problems.join('\n')}`)
+  }
+}
+
 function assertGloballyUnique(questions: Question[]): void {
   const seen = new Map<string, number>()
   for (const question of questions) {
@@ -143,6 +179,7 @@ async function main(): Promise<void> {
   const questions = files.flatMap((entry) => entry.questions)
   assertGloballyUnique(questions)
   assertAnswersAreMixed(questions)
+  assertReferencesMatchOrder(questions)
 
   const highlighter = await createHighlighter({
     themes: [SHIKI_THEME],

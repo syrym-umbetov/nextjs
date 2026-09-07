@@ -38,9 +38,15 @@ function correctPosition(question: Question): number {
   return question.options.findIndex((o) => o.id === question.correctOptionId) + 1
 }
 
-/** Разбор ссылается на варианты по номеру — переставлять такой вопрос нельзя. */
+/**
+ * Разбор ссылается на варианты по номеру — переставлять такой вопрос нельзя.
+ * Проверять надо все части разбора: после разделения explanation на поля
+ * ссылки переехали в distractors, и проверка только по explanation однажды
+ * уже пропустила их, из-за чего перестановка разъехалась со ссылками.
+ */
 function referencesPositions(question: Question): boolean {
-  return /\*\*\(\d\)\*\*/.test(question.explanation)
+  const parts = [question.explanation, ...question.distractors, question.footnote ?? '']
+  return parts.some((part) => /\*\*\(\d\)\*\*/.test(part))
 }
 
 const files = (await readdir(SOURCE_DIR)).filter((f) => f.endsWith('.json')).sort()
