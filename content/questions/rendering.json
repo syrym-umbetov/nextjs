@@ -1,0 +1,332 @@
+[
+  {
+    "id": "rsc-usestate-without-directive",
+    "topic": "rendering",
+    "difficulty": 1,
+    "type": "find-the-bug",
+    "prompt": "Компонент не собирается. Что нужно исправить?",
+    "code": {
+      "language": "tsx",
+      "content": "import { useState } from 'react'\n\nexport default function Counter() {\n  const [count, setCount] = useState(0)\n  return <button onClick={() => setCount(count + 1)}>{count}</button>\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Добавить `'use client'` первой строкой файла: `useState` и обработчики событий требуют кода, который выполняется в браузере"
+      },
+      {
+        "id": "b",
+        "text": "Заменить `useState` на `useReducer` — он работает и в Server Components"
+      },
+      {
+        "id": "c",
+        "text": "Обернуть компонент в `<Suspense>`"
+      },
+      {
+        "id": "d",
+        "text": "Сделать компонент асинхронным: `export default async function Counter()`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "По умолчанию layout и page — Server Components, и их код никогда не попадает в браузер. `useState`, `useEffect` и обработчики событий вроде `onClick` требуют кода, который выполняется в браузере и реагирует на обновления, поэтому нужна директива `'use client'`.\n\n**b** не помогает: `useReducer` — такой же клиентский хук состояния.\n\n**c** решает другую задачу. `<Suspense>` управляет стримингом асинхронного контента, а не тем, где выполняется код.\n\n**d** только ухудшит: асинхронность — свойство Server Components, а не способ получить состояние.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/server-and-client-components",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-directive-entry-point",
+    "topic": "rendering",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "`Dropdown.tsx` помечен `'use client'` и импортирует `formatPrice` из `lib/format.ts`, где директивы нет. Где выполняется `formatPrice`?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/ui/dropdown.tsx\n'use client'\n\nimport { formatPrice } from '@/lib/format'\n\nexport function Dropdown({ price }: { price: number }) {\n  const [open, setOpen] = useState(false)\n  return <button onClick={() => setOpen(!open)}>{formatPrice(price)}</button>\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Модуль попадает в клиентский граф и его код уезжает в браузер: `'use client'` нужен только на входе в клиентское поддерево, а всё импортируемое оттуда становится его частью"
+      },
+      {
+        "id": "b",
+        "text": "Только на сервере: без собственной директивы `'use client'` модуль остаётся серверным"
+      },
+      {
+        "id": "c",
+        "text": "Нигде — сборка упадёт: каждый модуль клиентского поддерева обязан объявлять директиву сам"
+      },
+      {
+        "id": "d",
+        "text": "В браузере, но только если файл переименовать в `format.client.ts`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Границу в графе модулей определяют два правила: **код** пересекает её через импорты, **данные** — через пропсы. Директива нужна только на входе в клиентское поддерево; каждый модуль, импортированный оттуда, становится частью клиентского графа и попадает в клиентский бандл.\n\n**b** описывает интуицию «нет директивы — значит сервер», но она работает только сверху вниз от серверного графа. Клиентский граф не импортирует серверный.\n\n**c** неверно: как раз наоборот, ставить директиву в каждый файл не требуется.\n\n**d** — конвенция из других инструментов, в Next.js её нет.\n\nПрактическое следствие: чтобы не тащить общий модуль в клиент, создают компонент-обёртку с директивой, оставляя общий модуль нетронутым. Так граница оказывается ближе к прикладному коду.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/server-and-client-boundary#crossing-the-boundary",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-children-slot",
+    "topic": "rendering",
+    "difficulty": 2,
+    "type": "predict-output",
+    "prompt": "`Modal` — Client Component, `Cart` и `Page` — Server Components. Где выполнится код `Cart`?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/page.tsx  (Server Component)\nimport { Cart } from '@/app/ui/cart'\nimport { Modal } from '@/app/ui/modal'\n\nexport default function Page() {\n  return (\n    <Modal title={<div>Ваша корзина</div>}>\n      <Cart />\n    </Modal>\n  )\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "На сервере: `Modal` получает уже отрендеренный вывод `Cart` как сериализованный элемент, но не его код"
+      },
+      {
+        "id": "b",
+        "text": "В браузере: всё, что оказалось внутри Client Component, становится клиентским"
+      },
+      {
+        "id": "c",
+        "text": "Нигде — React бросит ошибку: Server Component нельзя вкладывать в Client Component"
+      },
+      {
+        "id": "d",
+        "text": "На сервере, но только если `Modal` обернуть в `<Suspense>`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Отрендеренный React-элемент — сериализуемые данные, поэтому он спокойно пересекает границу. Передача вывода через `children` (или любой другой проп, здесь ещё и `title`) позволяет вложить Server Component внутрь Client Component, не затаскивая его код в клиентский граф.\n\nReact различает две роли: **владелец** — компонент, в чьём исходнике находится JSX ребёнка, **родитель** — тот, кто содержит ребёнка в отрендеренном дереве. Владелец `Cart` — это `Page`, Server Component, поэтому `Cart` рендерится на сервере. `Modal` — только родитель: он получает вывод `Cart`, чтобы поставить его в нужное место, но не код, чтобы его выполнить.\n\n**b** — самое распространённое заблуждение: клиентским становится импортированное, а не вложенное.\n\n**c** неверно: это штатный поддерживаемый паттерн.\n\n**d** приплетает `<Suspense>` без нужды — на то, где выполняется код, он не влияет.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/server-and-client-components#interleaving-server-and-client-components",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-function-prop-throws",
+    "topic": "rendering",
+    "difficulty": 2,
+    "type": "find-the-bug",
+    "prompt": "Server Component передаёт обработчик в Client Component и получает ошибку. Почему?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/page.tsx  (Server Component)\nimport { LikeButton } from '@/app/ui/like-button'\n\nexport default function Page() {\n  return <LikeButton onClick={() => console.log('liked')} />\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Пропсы сериализуются для отправки в браузер, а функции несериализуемы — `onClick` границу не пересекает"
+      },
+      {
+        "id": "b",
+        "text": "Проп называется `onClick`, а зарезервированы только имена, начинающиеся с `on`"
+      },
+      {
+        "id": "c",
+        "text": "Server Component обязан быть асинхронным, чтобы передавать пропсы в Client Component"
+      },
+      {
+        "id": "d",
+        "text": "Нужно обернуть функцию в `useCallback`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Данные пересекают границу через пропсы, и пропсы сериализуются, чтобы уехать в браузер. Функция — например обработчик события — несериализуема, поэтому передача функции пропом из Server Component в Client Component бросает ошибку. Обработчик должен быть объявлен внутри Client Component.\n\nИсключение — **Server Function**, помеченная `'use server'`: она пересекает границу как ссылка. По типу Server Function неотличима от обычной функции, поэтому плагин TypeScript пропускает функциональный проп Client Component, если он называется `action` или заканчивается на `Action`, и помечает остальные.\n\n**b** выдумывает несуществующее правило про префикс `on`.\n\n**c** не связано с проблемой: асинхронность Server Component ни на что тут не влияет.\n\n**d** — клиентский хук, его нельзя вызвать в Server Component, да и сериализуемости он не добавляет.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/server-and-client-boundary#crossing-the-boundary",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-client-renders-twice",
+    "topic": "rendering",
+    "difficulty": 3,
+    "type": "predict-output",
+    "prompt": "Пользователь открывает страницу с этим компонентом по прямой ссылке. Где появится `Hello rendered`?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/hello.tsx\n'use client'\n\nexport default function Hello() {\n  console.log('Hello rendered')\n  return <p>Hello</p>\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "И в терминале сервера, и в консоли браузера: при прямом заходе Client Component рендерится на сервере, а затем ещё раз в браузере при гидратации"
+      },
+      {
+        "id": "b",
+        "text": "Только в консоли браузера: слово «Client» означает, что компонент выполняется исключительно на клиенте"
+      },
+      {
+        "id": "c",
+        "text": "Только в терминале сервера: в проде клиентский рендер заменяется на пререндер"
+      },
+      {
+        "id": "d",
+        "text": "Нигде: `console.log` вырезается из клиентского бандла при сборке"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Названия обманчивы: рендеринг происходит в обоих местах.\n\n- **Server Component** — выполняется на сервере, в браузере никогда.\n- **Client Component** — выполняется на сервере **и** в браузере.\n\nСлово «Client» означает не «только в браузере», а «в том числе в браузере», в дополнение к серверному рендеру. При прямом заходе компонент рендерится на сервере в HTML, а затем ещё раз в браузере при гидратации — отсюда два лога.\n\nОтдельный случай: при клиентской навигации сервер присылает RSC Payload, и компонент рендерится в браузере без серверного HTML — тогда лог будет только один, в консоли.\n\n**b** — самое частое заблуждение о названии.\n\n**c** неверно: гидратация нужна, чтобы серверный HTML стал интерактивным, и она выполняется в продакшене тоже.\n\n**d** выдумка: Next.js не вырезает `console.log` из бандла.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/server-and-client-boundary#rendering-environments",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-context-provider",
+    "topic": "rendering",
+    "difficulty": 1,
+    "type": "find-the-bug",
+    "prompt": "Провайдер темы в корневом layout ломает сборку. Что не так?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/layout.tsx\nimport { createContext } from 'react'\n\nexport const ThemeContext = createContext({})\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang=\"ru\">\n      <body>\n        <ThemeContext.Provider value=\"dark\">{children}</ThemeContext.Provider>\n      </body>\n    </html>\n  )\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "React context не поддерживается в Server Components: провайдер надо вынести в отдельный Client Component, принимающий `children`"
+      },
+      {
+        "id": "b",
+        "text": "Корневой layout не может иметь проп `children`"
+      },
+      {
+        "id": "c",
+        "text": "`createContext` нужно вызывать внутри компонента, а не на уровне модуля"
+      },
+      {
+        "id": "d",
+        "text": "Достаточно добавить `'use client'` в `app/layout.tsx`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "React context в Server Components не поддерживается. Правильный приём — создать Client Component, который принимает `children` и оборачивает их в провайдер, а затем использовать его в серверном layout. Дети при этом остаются серверными: они приходят готовым выводом через проп.\n\n**b** неверно: `children` — обязательный проп любого layout.\n\n**c** неверно: `createContext` вызывают именно на уровне модуля.\n\n**d** формально уберёт ошибку, но ценой худшего решения: директива на корневом layout затащит в клиентский граф всё, что он импортирует. Граница клиентских компонентов должна быть как можно ниже по дереву — отсюда и приём с отдельным провайдером-обёрткой.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/server-and-client-components#context-providers",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-compound-component",
+    "topic": "rendering",
+    "difficulty": 3,
+    "type": "predict-output",
+    "prompt": "`Menu` — Client Component с составными частями (`Menu.Item`). Server Component пытается использовать `Menu.Item`. Что произойдёт?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/ui/menu.tsx\n'use client'\nexport function Menu({ children }) { /* ... */ }\nMenu.Item = function Item({ children }) { /* ... */ }\n\n// app/page.tsx  (Server Component)\nimport { Menu } from '@/app/ui/menu'\n\nexport default function Page() {\n  return (\n    <Menu>\n      <Menu.Item>Профиль</Menu.Item>\n    </Menu>\n  )\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Ошибка «Element type is invalid»: Server Component получает клиентскую ссылку, а не саму функцию, поэтому `Menu.Item` — `undefined`"
+      },
+      {
+        "id": "b",
+        "text": "Всё отрендерится: статические свойства сериализуются вместе с компонентом"
+      },
+      {
+        "id": "c",
+        "text": "Отрендерится, но `Menu.Item` выполнится на сервере как Server Component"
+      },
+      {
+        "id": "d",
+        "text": "Ошибка гидратации: разметка сервера и клиента разойдётся"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Паттерн составных компонентов работает внутри одного графа — когда все части серверные или все клиентские. Он ломается ровно тогда, когда статический член пересекает границу: Server Component, импортирующий Client Component, получает **клиентскую ссылку**, а не функцию. У ссылки нет свойства `Item`, поэтому `Menu.Item` оказывается `undefined`, и React бросает «Element type is invalid».\n\n**b** неверно: сериализуются пропсы и вывод, а не статические свойства функции-компонента.\n\n**c** неверно: `Menu.Item` объявлен в модуле с `'use client'` и серверным стать не может.\n\n**d** — другая ошибка, про расхождение разметки; здесь падение происходит раньше, на этапе разрешения типа элемента.\n\nРешения два: использовать составной Client Component из другого Client Component, либо экспортировать части именованными экспортами вместо статических свойств.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/server-and-client-boundary#crossing-the-boundary",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-import-server-into-client",
+    "topic": "rendering",
+    "difficulty": 3,
+    "type": "find-the-bug",
+    "prompt": "`Sidebar` обращается к базе напрямую, но после этой правки секрет подключения оказался в клиентском бандле. Что произошло и как исправить?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/ui/panel.tsx\n'use client'\n\nimport { useState } from 'react'\nimport { Sidebar } from '@/app/ui/sidebar' // Server Component с доступом к БД\n\nexport function Panel() {\n  const [open, setOpen] = useState(true)\n  return (\n    <div>\n      <button onClick={() => setOpen(!open)}>Переключить</button>\n      {open && <Sidebar />}\n    </div>\n  )\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Импорт втянул `Sidebar` в клиентский граф: нужно передавать её выводом через `children` из Server Component, а не импортировать"
+      },
+      {
+        "id": "b",
+        "text": "Достаточно добавить `'use server'` в начало `sidebar.tsx`"
+      },
+      {
+        "id": "c",
+        "text": "Нужно обернуть `<Sidebar />` в `<Suspense>` — тогда она отрендерится на сервере"
+      },
+      {
+        "id": "d",
+        "text": "Проблема в `open && <Sidebar />`: условный рендеринг отключает разделение графов"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Код пересекает границу через импорты. Как только модуль с `'use client'` импортирует другой модуль, тот попадает в клиентский граф и уезжает в браузер вместе со всем, что тянет за собой. Server Component так «клиентизируется», а его серверные зависимости и секреты оказываются в бандле.\n\nПравильный приём — слот: `Panel` принимает `children`, а `<Sidebar />` подставляет родительский Server Component. Тогда `Panel` получает только отрендеренный вывод.\n\n**b** неверно и опасно: `'use server'` помечает Server Functions, а не Server Components. Это объявит экспорты функциями, вызываемыми с клиента, — совсем не то.\n\n**c** неверно: `<Suspense>` не возвращает модуль в серверный граф.\n\n**d** выдумка: условный рендеринг на разделение графов не влияет.\n\nОтдельно стоит помнить: раз Server Component читает секреты и серверные данные напрямую, надо осознанно относиться к тому, что передаётся в Client Component — пропсы сериализуются и уезжают в браузер.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/server-and-client-boundary#crossing-the-boundary",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-promise-as-prop",
+    "topic": "rendering",
+    "difficulty": 3,
+    "type": "multiple-choice",
+    "prompt": "Нужно стримить серверные данные в Client Component, не заставляя браузер запрашивать их после монтирования. Какой приём описан в документации?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/page.tsx  (Server Component)\nimport { Posts } from '@/app/ui/posts'\n\nexport default function Page() {\n  const postsPromise = getPosts() // промис НЕ ожидается\n  return (\n    <Suspense fallback={<p>Загрузка…</p>}>\n      <Posts promise={postsPromise} />\n    </Suspense>\n  )\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Запустить запрос в Server Component и передать сам ожидающий промис пропом, а в Client Component прочитать его через `use`"
+      },
+      {
+        "id": "b",
+        "text": "Передать `async`-функцию пропом и вызвать её внутри `useEffect`"
+      },
+      {
+        "id": "c",
+        "text": "Дождаться промиса в Server Component и передать готовые данные — иначе `<Suspense>` не сработает"
+      },
+      {
+        "id": "d",
+        "text": "Сохранить данные в React context на сервере и прочитать в Client Component"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Server Component не обязан дожидаться всех данных, прежде чем вернуть UI. Запрос стартует на сервере, ожидающий промис уходит пропом, а Client Component читает его как ресурс через `use`. Пока промис не разрешён, ближайшая граница `<Suspense>` показывает fallback; когда разрешится — компонент отрендерится.\n\nСмысл приёма: запрос начинается **до** того, как заработал клиент, поэтому браузеру не нужно идти за теми же данными после монтирования.\n\n**b** — ровно тот водопад, которого приём избегает, плюс функцию нельзя передать пропом через границу.\n\n**c** описывает рабочий, но другой вариант: он блокирует Server Component до готовности данных, и стриминга не получается.\n\n**d** неверно: React context в Server Components не поддерживается.\n\nЗапрос в браузере всё ещё может понадобиться — когда данные зависят от клиентского состояния или действия пользователя.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/server-and-client-boundary#how-data-enters-the-tree",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "rsc-interactivity-without-client",
+    "topic": "rendering",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Какой из этих компонентов **обязан** быть Client Component?",
+    "code": {
+      "language": "tsx",
+      "content": "// 1\n<details><summary>Подробности</summary><p>…</p></details>\n\n// 2\n<form action={createPost}><input name=\"title\" /><button>Создать</button></form>\n\n// 3\n<video src=\"/clip.mp4\" controls />\n\n// 4\n<input value={query} onChange={(e) => setQuery(e.target.value)} />"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Четвёртый: управляемое поле требует состояния, которое меняется во времени, и обработчика события"
+      },
+      {
+        "id": "b",
+        "text": "Второй: любая форма требует клиентского состояния для отправки"
+      },
+      {
+        "id": "c",
+        "text": "Первый и третий: раскрытие и воспроизведение — это интерактивность"
+      },
+      {
+        "id": "d",
+        "text": "Все четыре: любая интерактивность требует `'use client'`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Встроенное поведение браузера и HTML даёт интерактивность без Client Component: `<details>` раскрывается и сворачивается сам, `<video controls>` играет и ставится на паузу, а `<form>` отправляется через Server Function, переданную в проп `action`.\n\nClient Component нужен там, где поведение требует **состояния браузера, меняющегося во времени**: управляемое поле, живой фильтр, ручка перетаскивания. Четвёртый пример — ровно такой случай: `useState` плюс `onChange`.\n\n**b** неверно: форма с Server Function в `action` прекрасно работает из Server Component.\n\n**c** называет интерактивностью то, что браузер обеспечивает сам, без вашего JavaScript.\n\n**d** — общее правило, из которого и состоит ловушка вопроса. Кнопка или форма не требуют Client Component, если браузер уже даёт всё нужное поведение.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/server-and-client-boundary#state-and-interactivity",
+    "nextVersion": "16.3"
+  }
+]

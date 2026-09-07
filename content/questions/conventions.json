@@ -1,0 +1,266 @@
+[
+  {
+    "id": "conv-route-groups",
+    "topic": "conventions",
+    "difficulty": 1,
+    "type": "predict-output",
+    "prompt": "По какому URL будет доступна эта страница?",
+    "code": {
+      "language": "bash",
+      "content": "app/\n└── (marketing)/\n    └── about/\n        └── page.tsx"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "`/about` — папка в круглых скобках не попадает в URL"
+      },
+      {
+        "id": "b",
+        "text": "`/(marketing)/about`"
+      },
+      {
+        "id": "c",
+        "text": "`/marketing/about`"
+      },
+      {
+        "id": "d",
+        "text": "Страница не будет доступна: скобки исключают папку из роутинга целиком"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Папка, обёрнутая в круглые скобки — `(folderName)` — образует route group. Конвенция говорит, что папка нужна для организации кода и **не включается** в URL роута. Группы используют, чтобы раскладывать роуты по командам и фичам, определять несколько корневых layout и подключать общий layout только части сегментов.\n\n**b** и **c** предполагают, что имя папки как-то попадёт в путь — не попадёт ни в каком виде.\n\n**d** путает route group с приватной папкой `_folderName`: вот та действительно выводит папку и все вложенные из роутинга.\n\nПодводный камень: роуты из разных групп не должны резолвиться в один URL. `(marketing)/about/page.js` и `(shop)/about/page.js` оба дадут `/about` и вызовут ошибку.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/file-conventions/route-groups",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "conv-private-folders",
+    "topic": "conventions",
+    "difficulty": 1,
+    "type": "multiple-choice",
+    "prompt": "Что делает подчёркивание в начале имени папки внутри `app/`?",
+    "code": {
+      "language": "bash",
+      "content": "app/\n├── _components/\n│   └── button.tsx\n└── dashboard/\n    └── page.tsx"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Выводит папку и все вложенные из системы роутинга — это приватная папка"
+      },
+      {
+        "id": "b",
+        "text": "Ничего: подчёркивание — обычный символ, папка станет сегментом `/_components`"
+      },
+      {
+        "id": "c",
+        "text": "Помечает содержимое как серверное — такие модули не попадают в клиентский бандл"
+      },
+      {
+        "id": "d",
+        "text": "То же, что круглые скобки: папка исключается из URL, но её `page.tsx` остаётся доступным"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Префикс `_` создаёт приватную папку: она объявляется деталью реализации и **вместе со всеми вложенными папками** выводится из роутинга.\n\n**b** неверно, но стоит знать обратный приём: если URL-сегмент действительно должен начинаться с подчёркивания, папку называют `%5FfolderName` — это URL-кодированная форма подчёркивания.\n\n**c** путает с пакетом `server-only`. Приватные папки влияют только на роутинг, не на графы модулей.\n\n**d** описывает route group `(folder)`: там папка исчезает из URL, но её страницы остаются роутами. У приватной папки роутов не возникает вовсе.\n\nСтрого говоря, приватные папки для соседства файлов не обязательны: файлы в `app` и так можно безопасно располагать рядом с сегментами — роутами становятся только файлы специальных конвенций вроде `page.js` и `route.js`.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/project-structure#private-folders",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "conv-optional-catch-all",
+    "topic": "conventions",
+    "difficulty": 2,
+    "type": "predict-output",
+    "prompt": "Какой из этих URL **не** совпадёт с роутом `app/shop/[...slug]/page.tsx`?",
+    "code": {
+      "language": "bash",
+      "content": "app/\n└── shop/\n    └── [...slug]/\n        └── page.tsx"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "`/shop` — обычный catch-all требует хотя бы один сегмент"
+      },
+      {
+        "id": "b",
+        "text": "`/shop/clothes`"
+      },
+      {
+        "id": "c",
+        "text": "`/shop/clothes/tops/t-shirts`"
+      },
+      {
+        "id": "d",
+        "text": "`/shop/clothes/tops` — catch-all ловит максимум два сегмента"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "`[...slug]` — catch-all: он подхватывает все последующие сегменты и отдаёт их массивом. `/shop/a` даёт `{ slug: ['a'] }`, `/shop/a/b/c` — `{ slug: ['a','b','c'] }`. Но сам `/shop` без сегментов он не ловит.\n\nЧтобы совпадал и базовый путь, сегмент делают необязательным двойными скобками: `[[...slug]]`. Тогда `/shop` тоже матчится, и `slug` приходит как `undefined`. В этом и состоит вся разница между двумя формами.\n\n**b** и **c** совпадают — это ровно то, для чего catch-all и нужен.\n\n**d** выдумывает ограничение на глубину: его нет.\n\nИ общий момент: `params` приходит промисом, так что значения читают через `async/await` или React-функцию `use`.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/file-conventions/dynamic-routes#optional-catch-all-segments",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "conv-template-vs-layout",
+    "topic": "conventions",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Поле ввода в шапке должно очищаться при каждом переходе между страницами раздела. Какой файл создать?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/dashboard/???.tsx\nexport default function Wrapper({ children }: { children: React.ReactNode }) {\n  return (\n    <section>\n      <SearchInput />\n      {children}\n    </section>\n  )\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "`template.tsx` — шаблон получает уникальный ключ, поэтому дочерние Client Components сбрасывают состояние при навигации"
+      },
+      {
+        "id": "b",
+        "text": "`layout.tsx` — он и так перемонтируется при каждой смене URL"
+      },
+      {
+        "id": "c",
+        "text": "`layout.tsx` с пропом `key={pathname}`"
+      },
+      {
+        "id": "d",
+        "text": "`loading.tsx` — он оборачивает страницу и сбрасывает её состояние"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "`template.js` похож на layout тем, что оборачивает layout или страницу. Разница в главном: layout сохраняется между роутами и держит состояние, а шаблон получает уникальный ключ, из-за чего дочерние Client Components сбрасывают состояние при навигации.\n\nШаблоны берут, когда нужно ресинхронизировать `useEffect` при переходе, сбросить состояние поля ввода или изменить поведение фреймворка по умолчанию — например заставить границы Suspense показывать fallback на каждой навигации, а не только при первой загрузке.\n\n**b** неверно: сохранение состояния — как раз то, ради чего layout существует.\n\n**c** — попытка воспроизвести шаблон вручную; layout не принимает `key` от роутера, для этого и есть отдельная конвенция.\n\n**d** — про Loading UI, к сбросу состояния отношения не имеет.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/file-conventions/template",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "conv-error-boundary-scope",
+    "topic": "conventions",
+    "difficulty": 3,
+    "type": "find-the-bug",
+    "prompt": "Ошибка бросается в корневом `app/layout.tsx`, но `app/error.tsx` её не ловит. Почему?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/error.tsx\n'use client'\n\nexport default function Error({ error, reset }) {\n  return <button onClick={() => reset()}>Повторить</button>\n}\n\n// app/layout.tsx — здесь бросается ошибка\nexport default function RootLayout({ children }) {\n  throw new Error('boom')\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "`error.js` не оборачивает `layout.js` того же сегмента — для ошибок корневого layout нужен `app/global-error.tsx` со своими тегами `<html>` и `<body>`"
+      },
+      {
+        "id": "b",
+        "text": "В `error.tsx` не хватает `'use server'`"
+      },
+      {
+        "id": "c",
+        "text": "Границы ошибок ловят только ошибки Client Components, а layout серверный"
+      },
+      {
+        "id": "d",
+        "text": "Нужно переименовать файл в `app/not-found.tsx`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "В иерархии компонентов `error.js` оборачивает `loading.js`, `not-found.js`, `page.js` и вложенные `layout.js` — но **не** `layout.js` или `template.js` того же сегмента. Поэтому ошибка в корневом layout проходит мимо `app/error.tsx`.\n\nДля этого случая есть `global-error.jsx` в корне `app`. Он замещает корневой layout, когда активен, поэтому обязан объявить собственные `<html>` и `<body>`, а также подключить нужные шрифты и стили. Глобальные стили приложения в него не попадают.\n\n**b** неверно: границы ошибок обязаны быть Client Components, там нужен `'use client'` — он и стоит.\n\n**c** неверно: `error.js` ловит ошибки и серверного рендера тоже, вопрос только в области охвата.\n\n**d** про другой сценарий — 404, а не про исключение.\n\nПолезно помнить и про разницу окружений: в разработке объект `Error` доезжает до клиента с исходным `message`, а в продакшене детали скрываются, чтобы не утекло лишнее.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/file-conventions/error#global-error",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "conv-loading-suspense",
+    "topic": "conventions",
+    "difficulty": 1,
+    "type": "multiple-choice",
+    "prompt": "Что делает файл `app/dashboard/loading.tsx`?",
+    "code": {
+      "language": "bash",
+      "content": "app/\n└── dashboard/\n    ├── layout.tsx\n    ├── loading.tsx\n    └── page.tsx"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Автоматически оборачивает `page.tsx` и всё вложенное в границу `<Suspense>`, показывая своё содержимое как fallback"
+      },
+      {
+        "id": "b",
+        "text": "Показывает индикатор только на время клиентской навигации, при прямом заходе не используется"
+      },
+      {
+        "id": "c",
+        "text": "Заменяет собой `page.tsx`, пока данные не загружены, и требует `'use client'`"
+      },
+      {
+        "id": "d",
+        "text": "Задаёт fallback для `error.tsx`, если рендер завершился ошибкой"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "`loading.js` строится на React Suspense: файл в папке автоматически оборачивает `page.js` и всё, что ниже, в границу `<Suspense>`, а своё содержимое отдаёт как fallback. В той же папке `loading.js` вкладывается внутрь `layout.js`. Готовое содержимое подставляется автоматически, как только досчитается.\n\n**b** неверно: мгновенное состояние загрузки показывается и при прямом заходе — оно приезжает с сервера, пока содержимое сегмента стримится.\n\n**c** неверно в обеих частях: `page.tsx` не заменяется, а оборачивается, и директива не требуется — fallback может быть обычным Server Component.\n\n**d** путает конвенции: `error.js` в иерархии наоборот оборачивает `loading.js`.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/file-conventions/loading",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "conv-parallel-default",
+    "topic": "conventions",
+    "difficulty": 3,
+    "type": "predict-output",
+    "prompt": "У слота `@team` есть страница `settings`, у `@analytics` — нет. Пользователь открыл `/settings` и нажал F5. Что увидит слот `@analytics`?",
+    "code": {
+      "language": "bash",
+      "content": "app/\n├── @analytics/\n│   └── page.tsx\n├── @team/\n│   ├── page.tsx\n│   └── settings/\n│       └── page.tsx\n├── layout.tsx\n└── page.tsx"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Ошибку: для именованного слота без совпадения нужен `default.js`, иначе продолжить рендеринг нельзя"
+      },
+      {
+        "id": "b",
+        "text": "Свою страницу `@analytics/page.tsx` — она подставляется для любого несовпавшего URL"
+      },
+      {
+        "id": "c",
+        "text": "Ту же страницу, что была активна до перезагрузки: роутер восстанавливает состояние слота"
+      },
+      {
+        "id": "d",
+        "text": "Пустоту: несовпавший слот просто не рендерится"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "При мягкой навигации Next.js помнит активное состояние каждого слота. При жёсткой — полной перезагрузке страницы — восстановить его невозможно, и для подстраниц, не совпавших с текущим URL, рендерится `default.js`.\n\nЕсли `default.js` нет, для именованных слотов (`@team`, `@analytics`) возвращается ошибка: файл обязателен, чтобы продолжить. Хотите прежнее поведение с 404 — создайте `default.js`, возвращающий `notFound()`.\n\n**b** неверно: fallback для несовпадения — это `default.js`, а не `page.js` слота.\n\n**c** описывает как раз мягкую навигацию; на F5 состояние теряется — в этом вся суть вопроса.\n\n**d** неверно: молчаливого пропуска не происходит.\n\nВажно и про неявный слот: `children` — тоже слот, и для него `default.js` нужен на тех же основаниях. Без него роут отдаст страницу 404.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/file-conventions/default",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "conv-middleware-to-proxy",
+    "topic": "conventions",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Проект обновили до Next.js 16, и `middleware.ts` в корне начал выдавать предупреждение об устаревании. Что изменилось?",
+    "code": {
+      "language": "ts",
+      "content": "// middleware.ts\nimport { NextResponse } from 'next/server'\n\nexport function middleware(request: Request) {\n  return NextResponse.next()\n}\n\nexport const config = { matcher: '/dashboard/:path*' }"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Конвенция переименована в `proxy.js|ts`: функциональность та же, поменялись только имена файла и экспорта, есть кодмод для миграции"
+      },
+      {
+        "id": "b",
+        "text": "Конвенция удалена целиком: перехват запросов теперь делается только через Route Handlers"
+      },
+      {
+        "id": "c",
+        "text": "Файл нужно перенести из корня в `app/middleware.ts`"
+      },
+      {
+        "id": "d",
+        "text": "Устарел только экспорт `config` — сопоставление путей теперь настраивается в `next.config.ts`"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "В Next.js 16 конвенция `middleware.js` объявлена устаревшей и переименована в `proxy.js`. Вся функциональность сохранена — изменились только имена файла и экспорта. Миграция автоматизирована кодмодом:\n\n`npx @next/codemod@canary middleware-to-proxy .`\n\n**b** неверно: конвенция никуда не делась, она переименована.\n\n**c** неверно: `proxy.ts` кладут в корень проекта (или в `src`, если он используется) — на том же уровне, что `app` или `pages`, а не внутрь `app`.\n\n**d** неверно: `config` с `matcher` продолжает работать.\n\nЗаодно стоит помнить рекомендацию из документации: Proxy задуман как отдельный от рендеринга слой, который в оптимизированных случаях уезжает на CDN ради быстрых редиректов и rewrite. Полагаться на общие модули и глобальные переменные там не стоит, а передавать данные в приложение следует через заголовки, cookies, rewrite, redirect или URL.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/file-conventions/proxy",
+    "nextVersion": "16.3"
+  }
+]
