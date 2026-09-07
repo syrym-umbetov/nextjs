@@ -45,7 +45,7 @@ function correctPosition(question: Question): number {
  * уже пропустила их, из-за чего перестановка разъехалась со ссылками.
  */
 function referencesPositions(question: Question): boolean {
-  const parts = [question.explanation, ...question.distractors, question.footnote ?? '']
+  const parts = [question.explanation, ...(question.distractors ?? []), question.footnote ?? '']
   return parts.some((part) => /\*\*\(\d\)\*\*/.test(part))
 }
 

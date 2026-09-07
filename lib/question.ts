@@ -54,19 +54,36 @@ export const QuestionTypeSchema = z.enum([
   'multiple-choice',
   'find-the-bug',
   'predict-output',
+  /** Варианты — это сами сниппеты кода, а не описания. */
+  'pick-the-code',
 ])
 export type QuestionType = z.infer<typeof QuestionTypeSchema>
-
-export const OptionSchema = z.object({
-  id: z.string().min(1).max(16),
-  text: z.string().min(1),
-})
-export type Option = z.infer<typeof OptionSchema>
 
 export const CodeSchema = z.object({
   language: z.enum(CODE_LANGUAGES),
   content: z.string().min(1),
 })
+
+export const OptionSchema = z
+  .object({
+    id: z.string().min(1).max(32),
+    /** Прозаический вариант ответа. */
+    text: z.string().min(1).optional(),
+    /** Короткое имя кодового варианта: «controlled input», «<form action>». */
+    label: z.string().min(1).max(40).optional(),
+    /** Сам сниппет. Вариант — это код и подпись, обоснование сюда не входит. */
+    code: CodeSchema.optional(),
+    /** Почему этот вариант верен или неверен. Показывается после ответа. */
+    feedback: z.string().min(1).optional(),
+  })
+  .refine((o) => (o.text !== undefined) !== (o.code !== undefined), {
+    message: 'вариант должен быть либо текстом, либо кодом — но не тем и другим сразу',
+  })
+  .refine((o) => o.code === undefined || o.label !== undefined, {
+    message: 'у кодового варианта обязана быть подпись label',
+    path: ['label'],
+  })
+export type Option = z.infer<typeof OptionSchema>
 
 export const QuestionSchema = z
   .object({
@@ -83,10 +100,16 @@ export const QuestionSchema = z
     correctOptionId: z.string().min(1),
     /** Почему верный вариант верен. */
     explanation: z.string().min(1),
-    /** Разбор неверных вариантов — по одному комментарию на вариант или группу. */
-    distractors: z.array(z.string().min(1)).min(1),
+    /**
+     * Разбор неверных вариантов общим списком — прежний способ.
+     * Предпочтительный — feedback у каждого варианта: он не разъезжается
+     * при перестановке, потому что привязан к варианту, а не к позиции.
+     */
+    distractors: z.array(z.string().min(1)).min(1).optional(),
     /** Необязательная заметка после разбора: смежный факт или подводный камень. */
     footnote: z.string().min(1).optional(),
+    /** Оговорка о версии или о том, чего документация не утверждает прямо. */
+    caveat: z.string().min(1).optional(),
     docsUrl: z
       .url()
       .startsWith('https://nextjs.org/docs', 'docsUrl: ссылка должна вести на nextjs.org/docs'),
@@ -102,13 +125,29 @@ export const QuestionSchema = z
     message: 'option.id повторяются внутри вопроса',
     path: ['options'],
   })
-  .refine((q) => q.type === 'multiple-choice' || q.code !== undefined, {
+  // У pick-the-code код живёт в самих вариантах, отдельный блок ему не нужен.
+  .refine((q) => q.type !== 'find-the-bug' && q.type !== 'predict-output' ? true : q.code !== undefined, {
     message: 'вопросы типа find-the-bug и predict-output обязаны содержать code',
     path: ['code'],
   })
-  .refine((q) => q.distractors.length <= q.options.length - 1, {
+  .refine((q) => (q.distractors?.length ?? 0) <= q.options.length - 1, {
     message: 'комментариев в distractors больше, чем неверных вариантов',
     path: ['distractors'],
+  })
+  // Разбор неверных вариантов обязателен — вопрос без него не объясняет ошибку.
+  .refine(
+    (q) =>
+      q.distractors !== undefined ||
+      q.options.every((o) => o.id === q.correctOptionId || o.feedback !== undefined),
+    {
+      message:
+        'нужен разбор неверных вариантов: либо feedback у каждого из них, либо список distractors',
+      path: ['options'],
+    },
+  )
+  .refine((q) => q.type !== 'pick-the-code' || q.options.every((o) => o.code !== undefined), {
+    message: 'у вопроса типа pick-the-code все варианты обязаны быть кодом',
+    path: ['options'],
   })
 
 export type Question = z.infer<typeof QuestionSchema>
@@ -137,7 +176,18 @@ export type QuestionIndex = z.infer<typeof QuestionIndexSchema>
  * Вопрос, готовый к показу: код уже подсвечен Shiki на этапе сборки, поэтому
  * ни грамматики, ни тема подсветки в клиентский бандл не попадают.
  */
+const RenderedOptionSchema = z.object({
+  id: z.string(),
+  text: z.string().optional(),
+  label: z.string().optional(),
+  code: CodeSchema.optional(),
+  /** Подсветка сниппета варианта, сделанная Shiki на сборке. */
+  codeHtml: z.string().optional(),
+  feedback: z.string().optional(),
+})
+
 export const RenderedQuestionSchema = QuestionSchema.safeExtend({
   codeHtml: z.string().optional(),
+  options: z.array(RenderedOptionSchema),
 })
 export type RenderedQuestion = z.infer<typeof RenderedQuestionSchema>

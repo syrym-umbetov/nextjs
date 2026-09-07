@@ -96,6 +96,16 @@ export function Explanation({ question, isCorrect }: ExplanationProps) {
   // Новый вопрос — старая подсказка неактуальна.
   useEffect(() => setSelection(null), [question.id])
 
+  // Разбор неверных вариантов: сначала feedback, привязанный к самому варианту —
+  // такой не разъезжается при перестановке. Список distractors остаётся для
+  // вопросов, которые ещё не переведены на привязку.
+  const bound = question.options
+    .map((option, index) => ({ option, position: index + 1 }))
+    .filter(({ option }) => option.id !== question.correctOptionId && option.feedback)
+  const notes = bound.length
+    ? bound.map(({ option, position }) => ({ text: option.feedback!, position }))
+    : (question.distractors ?? []).map((text) => ({ text, position: undefined }))
+
   return (
     <section
       ref={containerRef}
@@ -119,10 +129,16 @@ export function Explanation({ question, isCorrect }: ExplanationProps) {
           Почему остальные не подходят
         </h4>
         <ul className="mt-2 space-y-3">
-          {question.distractors.map((note, index) => (
+          {notes.map((note, index) => (
             <li key={index} className="flex gap-2.5">
-              <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-300" />
-              <Markdown text={note} className="min-w-0 flex-1 text-sm leading-relaxed text-stone-700" />
+              {note.position === undefined ? (
+                <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-300" />
+              ) : (
+                <span className="mt-0.5 shrink-0 rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-500">
+                  {note.position}
+                </span>
+              )}
+              <Markdown text={note.text} className="min-w-0 flex-1 text-sm leading-relaxed text-stone-700" />
             </li>
           ))}
         </ul>

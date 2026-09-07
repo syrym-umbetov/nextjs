@@ -8,6 +8,7 @@ const TYPE_TITLES: Record<RenderedQuestion['type'], string> = {
   'multiple-choice': 'Выбор варианта',
   'find-the-bug': 'Найди ошибку',
   'predict-output': 'Предскажи поведение',
+  'pick-the-code': 'Выбери код',
 }
 
 interface QuestionCardProps {
@@ -90,7 +91,20 @@ export function QuestionCard({
                     <kbd className="mt-0.5 shrink-0 rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-600">
                       {position + 1}
                     </kbd>
-                    <Markdown text={option.text} className="min-w-0 flex-1" />
+                    {option.codeHtml ? (
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-medium text-stone-500">
+                          {option.label}
+                        </span>
+                        {/* Подсветка сделана Shiki на сборке из нашего же репозитория. */}
+                        <span
+                          className="mt-1.5 block overflow-hidden rounded-md border border-stone-200"
+                          dangerouslySetInnerHTML={{ __html: option.codeHtml }}
+                        />
+                      </span>
+                    ) : (
+                      <Markdown text={option.text ?? ''} className="min-w-0 flex-1" />
+                    )}
                     {revealed && (
                       <span
                         className={`mt-0.5 shrink-0 text-sm font-medium ${isCorrect ? 'text-emerald-700' : isChosen ? 'text-rose-700' : 'text-transparent'}`}

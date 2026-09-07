@@ -1,0 +1,248 @@
+[
+  {
+    "id": "img-dimensions-required",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "pick-the-code",
+    "prompt": "У какого `<Image>` размеры **обязаны** быть указаны явно, но их нет?",
+    "options": [
+      {
+        "id": "a",
+        "label": "статический импорт",
+        "code": {
+          "language": "tsx",
+          "content": "import hero from './hero.png'\n\n<Image\n  src={hero}\n  alt=\"Обложка\"\n/>"
+        },
+        "feedback": "Размеры выводятся из самого файла при статическом импорте, поэтому указывать их не нужно."
+      },
+      {
+        "id": "b",
+        "label": "строковый src с размерами",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src=\"/hero.png\"\n  alt=\"Обложка\"\n  width={800}\n  height={450}\n/>"
+        },
+        "feedback": "Правило соблюдено: у строкового `src` размеры заданы обоими пропсами."
+      },
+      {
+        "id": "c",
+        "label": "fill в контейнере",
+        "code": {
+          "language": "tsx",
+          "content": "<div style={{ position: 'relative' }}>\n  <Image src=\"/hero.png\" alt=\"Обложка\" fill />\n</div>"
+        },
+        "feedback": "`fill` — второе исключение из правила: изображение растягивается по родителю, и явные размеры не нужны."
+      },
+      {
+        "id": "d",
+        "label": "строковый src без размеров",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src=\"/hero.png\"\n  alt=\"Обложка\"\n/>"
+        },
+        "feedback": "Здесь и ломается: `src` — строка, статического импорта нет, `fill` не задан, значит `width` и `height` обязательны."
+      }
+    ],
+    "correctOptionId": "d",
+    "explanation": "Документация формулирует правило коротко: `width` и `height` **обязаны** быть заданы, кроме двух случаев — изображение импортировано статически либо у него стоит `fill`.\n\nРазмеры нужны не ради разметки, а чтобы зарезервировать место до загрузки и не получить сдвиг макета. Если реальные размеры заранее неизвестны, документация советует брать `fill`.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/components/image#width-and-height",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "img-fill-parent",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "pick-the-code",
+    "prompt": "При `fill` родительский элемент **обязан** быть позиционированным. Где это соблюдено?",
+    "options": [
+      {
+        "id": "a",
+        "label": "родитель relative",
+        "code": {
+          "language": "tsx",
+          "content": "<div style={{ position: 'relative' }}>\n  <Image src=\"/hero.png\" alt=\"\" fill />\n</div>"
+        },
+        "feedback": "Верно: у родителя задан `position: relative`, и изображение позиционируется относительно него."
+      },
+      {
+        "id": "b",
+        "label": "родитель без position",
+        "code": {
+          "language": "tsx",
+          "content": "<div style={{ width: 400 }}>\n  <Image src=\"/hero.png\" alt=\"\" fill />\n</div>"
+        },
+        "feedback": "Ширина задана, но `position` нет. Изображение с `position: absolute` отсчитается от ближайшего позиционированного предка выше по дереву."
+      },
+      {
+        "id": "c",
+        "label": "родитель flex",
+        "code": {
+          "language": "tsx",
+          "content": "<div style={{ display: 'flex' }}>\n  <Image src=\"/hero.png\" alt=\"\" fill />\n</div>"
+        },
+        "feedback": "`display: flex` не создаёт систему координат для абсолютного позиционирования — нужен именно `position`."
+      },
+      {
+        "id": "d",
+        "label": "fill вместе с размерами",
+        "code": {
+          "language": "tsx",
+          "content": "<div>\n  <Image\n    src=\"/hero.png\" alt=\"\" fill\n    width={400} height={300}\n  />\n</div>"
+        },
+        "feedback": "`fill` и явные размеры противоречат друг другу: первый растягивает изображение по родителю, вторые задают фиксированный размер."
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "`fill` заставляет изображение занять размер родительского элемента. Само оно получает `position: absolute`, поэтому отсчитывается от ближайшего позиционированного предка.\n\nОтсюда требование: родитель обязан объявить `position` — `relative`, `fixed` или `absolute`. Без этого изображение «убежит» к другому предку или к корню документа.",
+    "footnote": "Если стили изображению не заданы, оно растянется под контейнер целиком. Обрезкой и масштабированием управляет `objectFit`.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/components/image#fill",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "img-alt-required",
+    "topic": "styling",
+    "difficulty": 1,
+    "type": "pick-the-code",
+    "prompt": "Проп `alt` у `next/image` **обязателен**. Какой вариант пройдёт проверку типов?",
+    "options": [
+      {
+        "id": "a",
+        "label": "alt отсутствует",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src=\"/avatar.png\"\n  width={64} height={64}\n/>"
+        },
+        "feedback": "Пропа нет вовсе — обязательный проп пропущен, и проверка типов не пройдёт."
+      },
+      {
+        "id": "b",
+        "label": "alt со значением null",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src=\"/avatar.png\"\n  alt={null}\n  width={64} height={64}\n/>"
+        },
+        "feedback": "`null` не подходит по типу: проп ожидает строку."
+      },
+      {
+        "id": "c",
+        "label": "alt заполнен",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src=\"/avatar.png\"\n  alt=\"Фото автора\"\n  width={64} height={64}\n/>"
+        },
+        "feedback": "Верно: `alt` присутствует и описывает изображение."
+      },
+      {
+        "id": "d",
+        "label": "title вместо alt",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src=\"/avatar.png\"\n  title=\"Фото автора\"\n  width={64} height={64}\n/>"
+        },
+        "feedback": "`title` даёт всплывающую подсказку и обязательный `alt` не заменяет."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "`alt` помечен в справочнике как Required — это не рекомендация, а требование типов, появившееся вместе с переездом `next/image` в 13-й версии.\n\nДля декоративного изображения, которое не несёт смысла, правильное значение — пустая строка `alt=\"\"`: так вспомогательные технологии его пропустят.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/components/image#alt",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "font-weight-non-variable",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "pick-the-code",
+    "prompt": "Шрифт невариативный. Какое объявление **обязано** содержать `weight`?",
+    "options": [
+      {
+        "id": "a",
+        "label": "локальный шрифт",
+        "code": {
+          "language": "ts",
+          "content": "import localFont from 'next/font/local'\n\nconst my = localFont({\n  src: './my-font.woff2',\n})"
+        },
+        "feedback": "У локального шрифта файл указан напрямую, поэтому начертание известно из самого `src`."
+      },
+      {
+        "id": "b",
+        "label": "невариативный без веса",
+        "code": {
+          "language": "ts",
+          "content": "import { Roboto } from 'next/font/google'\n\nconst roboto = Roboto({\n  subsets: ['latin'],\n})"
+        },
+        "feedback": "Здесь и не хватает: у невариативного шрифта начертание надо назвать явно, иначе непонятно, какой файл подгружать."
+      },
+      {
+        "id": "c",
+        "label": "вариативный шрифт",
+        "code": {
+          "language": "ts",
+          "content": "import { Inter } from 'next/font/google'\n\nconst inter = Inter({\n  subsets: ['latin'],\n})"
+        },
+        "feedback": "Inter вариативный: диапазон начертаний уже внутри файла, отдельный `weight` не требуется."
+      },
+      {
+        "id": "d",
+        "label": "невариативный с весом",
+        "code": {
+          "language": "ts",
+          "content": "import { Roboto } from 'next/font/google'\n\nconst roboto = Roboto({\n  weight: '400',\n  subsets: ['latin'],\n})"
+        },
+        "feedback": "Требование выполнено: начертание указано явно."
+      }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Документация рекомендует вариативные шрифты как лучший выбор по производительности и гибкости: одно семейство покрывает весь диапазон начертаний. Но если вариативного нет, начертание придётся назвать: `weight: '400'`.\n\nПричина простая — у невариативного семейства каждое начертание это отдельный файл, и без указания непонятно, какой из них подгружать.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/fonts",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "font-css-variable",
+    "topic": "styling",
+    "difficulty": 3,
+    "type": "pick-the-code",
+    "prompt": "Шрифт нужно отдать в Tailwind через CSS-переменную. Какое объявление **только** и решает эту задачу?",
+    "options": [
+      {
+        "id": "a",
+        "label": "опция variable",
+        "code": {
+          "language": "tsx",
+          "content": "const inter = Inter({\n  subsets: ['latin'],\n  variable: '--font-inter',\n})\n\n<html className={inter.variable}>"
+        },
+        "feedback": "Верно: опция объявляет CSS-переменную, а `inter.variable` вешает класс, который её определяет."
+      },
+      {
+        "id": "b",
+        "label": "применение className",
+        "code": {
+          "language": "tsx",
+          "content": "const inter = Inter({ subsets: ['latin'] })\n\n<html className={inter.className}>"
+        },
+        "feedback": "Рабочий способ применить шрифт напрямую, но CSS-переменной он не создаёт, и Tailwind сослаться на него не сможет."
+      },
+      {
+        "id": "c",
+        "label": "имя семейства строкой",
+        "code": {
+          "language": "tsx",
+          "content": "<html style={{\n  '--font-inter': 'Inter, sans-serif',\n} as React.CSSProperties}>"
+        },
+        "feedback": "Переменная объявлена, но шрифт при этом не самохостится: браузер будет искать его на устройстве или в сети."
+      },
+      {
+        "id": "d",
+        "label": "инлайновый style",
+        "code": {
+          "language": "tsx",
+          "content": "const inter = Inter({ subsets: ['latin'] })\n\n<html style={{ fontFamily: inter.style.fontFamily }}>"
+        },
+        "feedback": "Задаёт семейство инлайном, но переменной не появляется — правилам Tailwind опереться не на что."
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Опция `variable` объявляет CSS-переменную с указанным именем. Класс из `font.variable` вешают на элемент — обычно на `<html>` — и переменная становится доступна вложенным правилам, в том числе конфигурации Tailwind.\n\nОтличие от `className` в том, что второй применяет шрифт напрямую и не даёт имени, на которое можно сослаться из CSS.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/components/font#variable",
+    "nextVersion": "16.3"
+  }
+]

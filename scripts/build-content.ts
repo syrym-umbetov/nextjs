@@ -138,7 +138,7 @@ function assertReferencesMatchOrder(questions: Question[]): void {
   for (const question of questions) {
     const correctPosition =
       question.options.findIndex((o) => o.id === question.correctOptionId) + 1
-    const parts = [...question.distractors, question.footnote ?? '']
+    const parts = [...(question.distractors ?? []), question.footnote ?? '']
 
     for (const part of parts) {
       for (const match of part.matchAll(/\*\*\((\d)\)\*\*/g)) {
@@ -190,12 +190,17 @@ async function main(): Promise<void> {
   await mkdir(join(OUT_DIR, 'q'), { recursive: true })
 
   for (const question of questions) {
-    const rendered: RenderedQuestion = { ...question }
+    const highlight = (code: { language: (typeof CODE_LANGUAGES)[number]; content: string }) =>
+      highlighter.codeToHtml(code.content, { lang: code.language, theme: SHIKI_THEME })
+
+    const rendered: RenderedQuestion = {
+      ...question,
+      options: question.options.map((option) =>
+        option.code ? { ...option, codeHtml: highlight(option.code) } : option,
+      ),
+    }
     if (question.code) {
-      rendered.codeHtml = highlighter.codeToHtml(question.code.content, {
-        lang: question.code.language,
-        theme: SHIKI_THEME,
-      })
+      rendered.codeHtml = highlight(question.code)
     }
     await writeFile(join(OUT_DIR, 'q', `${question.id}.json`), JSON.stringify(rendered), 'utf8')
   }
