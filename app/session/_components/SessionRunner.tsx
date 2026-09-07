@@ -307,19 +307,21 @@ export function SessionRunner() {
               элемент остаётся в потоке, поэтому не перекрывает конец разбора и
               не требует запаса снизу. Ширина — по колонке контента, на телефоне
               панель во всю ширину экрана. */}
-          <div className="sticky bottom-0 z-20 -mx-4 mt-4 flex items-center gap-3 border-t border-stone-200 bg-stone-50/90 px-4 py-3 backdrop-blur sm:-mx-2 sm:rounded-xl sm:border sm:px-3 sm:shadow-sm">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-4 flex items-center border-t border-stone-200 bg-stone-50/90 px-4 py-3 backdrop-blur sm:-mx-2 sm:rounded-xl sm:border sm:px-3 sm:shadow-sm">
+            {/* Подсказка и счётчик выведены из потока, поэтому кнопка стоит
+                ровно по центру панели независимо от их ширины. */}
+            <span className="absolute left-4 text-xs text-stone-500 max-sm:hidden">
+              или <kbd className="rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 font-mono">Enter</kbd>
+            </span>
             <button
               ref={nextButtonRef}
               type="button"
               onClick={handleNext}
-              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 max-sm:w-full max-sm:py-3 max-sm:text-base"
+              className="mx-auto rounded-lg bg-stone-900 px-5 py-2 text-sm font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 max-sm:w-full max-sm:py-3 max-sm:text-base"
             >
               {isLast ? 'Итоги' : 'Дальше'}
             </button>
-            <span className="text-xs text-stone-500 max-sm:hidden">
-              или <kbd className="rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 font-mono">Enter</kbd>
-            </span>
-            <span className="ml-auto text-xs tabular-nums text-stone-400 max-sm:hidden">
+            <span className="absolute right-4 text-xs tabular-nums text-stone-400 max-sm:hidden">
               {state.currentIndex + 1} / {state.questions.length}
             </span>
           </div>
