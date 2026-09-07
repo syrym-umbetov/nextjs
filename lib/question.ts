@@ -21,6 +21,7 @@ export const TOPICS = [
   'metadata',
   'security',
   'deployment',
+  'testing',
 ] as const
 
 export const TopicSchema = z.enum(TOPICS)
@@ -39,6 +40,7 @@ export const TOPIC_TITLES: Record<Topic, string> = {
   metadata: 'Метаданные',
   security: 'Аутентификация и безопасность',
   deployment: 'Деплой и self-hosting',
+  testing: 'Тестирование',
 }
 
 /** Языки, которые точно умеет подсветить Shiki с нашим набором грамматик. */
@@ -79,7 +81,12 @@ export const QuestionSchema = z
     // Максимум четыре варианта: интерфейс завязан на клавиши 1–4.
     options: z.array(OptionSchema).min(2).max(4),
     correctOptionId: z.string().min(1),
+    /** Почему верный вариант верен. */
     explanation: z.string().min(1),
+    /** Разбор неверных вариантов — по одному комментарию на вариант или группу. */
+    distractors: z.array(z.string().min(1)).min(1),
+    /** Необязательная заметка после разбора: смежный факт или подводный камень. */
+    footnote: z.string().min(1).optional(),
     docsUrl: z
       .url()
       .startsWith('https://nextjs.org/docs', 'docsUrl: ссылка должна вести на nextjs.org/docs'),
@@ -98,6 +105,10 @@ export const QuestionSchema = z
   .refine((q) => q.type === 'multiple-choice' || q.code !== undefined, {
     message: 'вопросы типа find-the-bug и predict-output обязаны содержать code',
     path: ['code'],
+  })
+  .refine((q) => q.distractors.length <= q.options.length - 1, {
+    message: 'комментариев в distractors больше, чем неверных вариантов',
+    path: ['distractors'],
   })
 
 export type Question = z.infer<typeof QuestionSchema>

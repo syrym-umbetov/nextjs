@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { summarize, type TopicSummary } from '@/lib/progress'
 import { isDue, toDayString } from '@/lib/srs'
-import { loadProgress } from '@/lib/storage'
+import { PROGRESS_CHANGED_EVENT, loadProgress } from '@/lib/storage'
 
 /**
  * Статистика по теме. Единственный клиентский кусок главной страницы: всё
@@ -13,8 +13,13 @@ export function TopicStats({ questionIds }: { questionIds: string[] }) {
   const [summary, setSummary] = useState<TopicSummary | null>(null)
 
   useEffect(() => {
-    const today = toDayString(new Date())
-    setSummary(summarize(loadProgress(), questionIds, (card) => isDue(card, today)))
+    function read() {
+      const today = toDayString(new Date())
+      setSummary(summarize(loadProgress(), questionIds, (card) => isDue(card, today)))
+    }
+    read()
+    window.addEventListener(PROGRESS_CHANGED_EVENT, read)
+    return () => window.removeEventListener(PROGRESS_CHANGED_EVENT, read)
   }, [questionIds])
 
   if (!summary) {

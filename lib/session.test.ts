@@ -22,6 +22,7 @@ function question(id: string, correctOptionId = 'a'): RenderedQuestion {
     ],
     correctOptionId,
     explanation: 'explanation',
+    distractors: ['почему другой вариант не подходит'],
     docsUrl: 'https://nextjs.org/docs/app',
     nextVersion: '16.3',
   }

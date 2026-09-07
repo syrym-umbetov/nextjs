@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ResetProgress } from '@/app/_components/ResetProgress'
 import { TopicStats } from '@/app/_components/TopicStats'
 import { loadAllQuestions } from '@/lib/content'
 import { TOPIC_TITLES, TOPICS, type Topic } from '@/lib/question'
@@ -76,6 +77,10 @@ export default async function HomePage() {
           })}
         </ul>
       </section>
+
+      <footer className="mt-10 border-t border-stone-200 pt-5">
+        <ResetProgress />
+      </footer>
     </main>
   )
 }

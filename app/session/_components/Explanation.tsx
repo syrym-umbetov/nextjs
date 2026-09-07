@@ -93,6 +93,29 @@ export function Explanation({ question, isCorrect }: ExplanationProps) {
         text={question.explanation}
         className="mt-2 text-[0.9375rem] leading-relaxed text-stone-800"
       />
+
+      {/* Разбор неверных вариантов отделён: сначала читается, почему верный
+          ответ верен, и только потом — что не так с остальными. */}
+      <div className="mt-4 rounded-lg border border-stone-200/80 bg-white/60 px-4 py-3">
+        <h4 className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
+          Почему остальные не подходят
+        </h4>
+        <ul className="mt-2 space-y-3">
+          {question.distractors.map((note, index) => (
+            <li key={index} className="flex gap-2.5">
+              <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-300" />
+              <Markdown text={note} className="min-w-0 flex-1 text-sm leading-relaxed text-stone-700" />
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {question.footnote && (
+        <div className="mt-3 border-l-2 border-stone-300 pl-3">
+          <Markdown text={question.footnote} className="text-sm leading-relaxed text-stone-600" />
+        </div>
+      )}
+
       <a
         href={question.docsUrl}
         target="_blank"

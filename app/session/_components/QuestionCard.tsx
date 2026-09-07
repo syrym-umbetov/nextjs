@@ -30,8 +30,9 @@ export function QuestionCard({
 
   // При переходе к новому вопросу переводим фокус на заголовок: скринридер
   // прочитает номер и формулировку, а клавиши 1–4 продолжат работать.
+  // Прокруткой управляет SessionRunner, поэтому фокус её не вызывает.
   useEffect(() => {
-    headingRef.current?.focus()
+    headingRef.current?.focus({ preventScroll: true })
   }, [question.id])
 
   return (

@@ -8,6 +8,17 @@
  */
 import { STORAGE_KEY, emptyProgress, parseProgress, type Progress } from './progress'
 
+/**
+ * Событие о смене прогресса. localStorage не уведомляет вкладку о собственных
+ * записях, поэтому статистику на главной обновляем сами.
+ */
+export const PROGRESS_CHANGED_EVENT = 'trainer:progress-changed'
+
+function notifyChanged(): void {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new Event(PROGRESS_CHANGED_EVENT))
+}
+
 function getStorage(): Storage | null {
   // localStorage недоступен при SSR/пререндере, а также в приватном режиме
   // некоторых браузеров, где обращение к нему бросает исключение.
@@ -52,6 +63,7 @@ export function clearProgress(): boolean {
 
   try {
     storage.removeItem(STORAGE_KEY)
+    notifyChanged()
     return true
   } catch {
     return false

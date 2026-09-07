@@ -47,6 +47,8 @@ export function SessionRunner() {
   const persistedCount = useRef(0)
   const nextButtonRef = useRef<HTMLButtonElement>(null)
   const explanationRef = useRef<HTMLDivElement>(null)
+  const questionRef = useRef<HTMLDivElement>(null)
+  const isFirstQuestion = useRef(true)
 
   // Загрузка сессии: сначала лёгкий индекс, затем — только тела тех вопросов,
   // которые отобрал планировщик. Остальные 20+ вопросов в браузер не попадают.
@@ -151,6 +153,21 @@ export function SessionRunner() {
   useEffect(() => {
     if (revealed) nextButtonRef.current?.focus({ preventScroll: true })
   }, [revealed, state.currentIndex])
+
+  // Новый вопрос — подводим его к верху экрана. Иначе после «Дальше» из конца
+  // длинного разбора пользователь остаётся прокрученным вниз и видит середину
+  // следующего вопроса. Первый вопрос сессии не трогаем: страница и так сверху.
+  useEffect(() => {
+    if (isFirstQuestion.current) {
+      isFirstQuestion.current = false
+      return
+    }
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    questionRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    })
+  }, [state.currentIndex])
 
   // Через четыре секунды после ответа подводим разбор под глаза: этого хватает,
   // чтобы заметить, верным ли был ответ, и не выдёргивает страницу мгновенно.
@@ -270,13 +287,15 @@ export function SessionRunner() {
         </span>
       </div>
 
-      <QuestionCard
-        question={question}
-        selectedOptionId={state.selectedOptionId}
-        questionNumber={state.currentIndex + 1}
-        total={state.questions.length}
-        onSelect={handleSelect}
-      />
+      <div ref={questionRef} className="scroll-mt-4">
+        <QuestionCard
+          question={question}
+          selectedOptionId={state.selectedOptionId}
+          questionNumber={state.currentIndex + 1}
+          total={state.questions.length}
+          onSelect={handleSelect}
+        />
+      </div>
 
       {revealed && answer && (
         <>
