@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ResetProgress } from '@/app/_components/ResetProgress'
 import { TopicStats } from '@/app/_components/TopicStats'
 import { loadAllQuestions } from '@/lib/content'
+import { pluralize } from '@/lib/plural'
 import { TOPIC_TITLES, TOPICS, type Topic } from '@/lib/question'
 
 export default async function HomePage() {
@@ -63,7 +64,9 @@ export default async function HomePage() {
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="font-medium text-stone-900">{TOPIC_TITLES[topic]}</h3>
-                  <span className="text-xs text-stone-500 tabular-nums">{ids.length} вопросов</span>
+                  <span className="text-xs text-stone-500 tabular-nums">
+                    {pluralize(ids.length, 'вопрос', 'вопроса', 'вопросов')}
+                  </span>
                 </div>
                 <TopicStats questionIds={ids} />
                 <Link
