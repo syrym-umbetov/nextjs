@@ -1,0 +1,247 @@
+[
+  {
+    "id": "meta-default-fields",
+    "topic": "metadata",
+    "difficulty": 1,
+    "type": "multiple-choice",
+    "prompt": "Роут не объявляет метаданных вовсе. Какие теги всё равно окажутся в `<head>`?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Базовый набор Open Graph по имени роута",
+        "feedback": "Open Graph заполняется только тем, что вы объявили сами или положили файлом-конвенцией."
+      },
+      {
+        "id": "b",
+        "text": "`title` и `description` с именем проекта из `package.json`",
+        "feedback": "Никаких умолчаний из `package.json` не подставляется."
+      },
+      {
+        "id": "c",
+        "text": "Никакие: без экспорта метаданных `<head>` останется пустым",
+        "feedback": "Два тега добавляются независимо от того, объявили вы что-нибудь или нет."
+      },
+      {
+        "id": "d",
+        "text": "`meta charset` и `meta viewport` — они добавляются всегда",
+        "feedback": "Верно: два тега по умолчанию задают кодировку и параметры вьюпорта."
+      }
+    ],
+    "correctOptionId": "d",
+    "explanation": "Два тега добавляются всегда: `<meta charset=\"utf-8\">` задаёт кодировку, `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">` — вьюпорт под разные устройства.\n\nВсё остальное описывают либо объектом `Metadata` для статических значений, либо функцией `generateMetadata` для зависящих от данных, либо файловыми конвенциями.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/metadata-and-og-images#default-fields",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "meta-server-components-only",
+    "topic": "metadata",
+    "difficulty": 2,
+    "type": "find-the-bug",
+    "prompt": "Экспорт `metadata` из этого файла не работает. Почему?",
+    "code": {
+      "language": "tsx",
+      "content": "'use client'\n\nimport type { Metadata } from 'next'\n\nexport const metadata: Metadata = { title: 'Блог' }\n\nexport default function Page() { return <Posts /> }"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Метаданные экспортируются только из layout",
+        "feedback": "Их экспортируют и из `page`, и из `layout`."
+      },
+      {
+        "id": "b",
+        "text": "Объект должен называться иначе",
+        "feedback": "Имя `metadata` верное — дело в клиентской директиве."
+      },
+      {
+        "id": "c",
+        "text": "Метаданные объявляются только функцией `generateMetadata`",
+        "feedback": "Статический объект — штатный способ, когда значения не зависят от данных."
+      },
+      {
+        "id": "d",
+        "text": "Экспорты `metadata` и `generateMetadata` поддерживаются **только** в Server Components, а файл помечен `'use client'`",
+        "feedback": "Верно: директива делает модуль клиентским, и экспорт метаданных перестаёт учитываться."
+      }
+    ],
+    "correctOptionId": "d",
+    "explanation": "Экспорты `metadata` и `generateMetadata` поддерживаются **только в Server Components**. Директива `'use client'` переводит модуль в клиентский граф, и экспорт перестаёт учитываться — молча, без ошибки.\n\nПриём тот же, что и с провайдерами: интерактивную часть выносят в отдельный клиентский компонент, а страница остаётся серверной и объявляет метаданные.",
+    "footnote": "Для `global-error.jsx` действует то же ограничение: он обязан быть Client Component, поэтому метаданные там не экспортируются — вместо них используют React-компонент `<title>`.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/metadata-and-og-images",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "meta-merging-shallow",
+    "topic": "metadata",
+    "difficulty": 3,
+    "type": "predict-output",
+    "prompt": "Корневой layout и страница объявляют `openGraph`. Что окажется в итоге?",
+    "code": {
+      "language": "ts",
+      "content": "// app/layout.tsx\nexport const metadata = {\n  openGraph: { title: 'Acme', siteName: 'Acme' },\n}\n\n// app/blog/page.tsx\nexport const metadata = { openGraph: { title: 'Блог' } }"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Только `openGraph` корневого layout как более общий",
+        "feedback": "Порядок обратный: метаданные вычисляются от корня вниз, и побеждает ближайший к странице сегмент."
+      },
+      {
+        "id": "b",
+        "text": "Оба объединятся по полям: `title` из корня, `description` со страницы",
+        "feedback": "Слияние поверхностное, а не глубокое: вложенный объект заменяется, а не дополняется."
+      },
+      {
+        "id": "c",
+        "text": "Только `openGraph` страницы: слияние поверхностное, и вложенное поле целиком заменяется последним сегментом",
+        "feedback": "Верно: `title` из корневого `openGraph` не сохранится — объект перезаписывается целиком."
+      },
+      {
+        "id": "d",
+        "text": "Сборка упадёт на конфликте одинаковых ключей",
+        "feedback": "Конфликта нет: повторяющиеся ключи штатно заменяются по порядку."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "Метаданные вычисляются по порядку от корневого сегмента вниз к странице, а объекты из разных сегментов сливаются **поверхностно**. Повторяющиеся ключи заменяются согласно порядку.\n\nПрактическое следствие: вложенные поля вроде `openGraph` и `robots`, объявленные раньше, **перезаписываются целиком** последним сегментом, который их задал. Чтобы сохранить общую часть, её выносят в отдельную переменную и раскрывают в каждом сегменте.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/functions/generate-metadata#merging",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "meta-base",
+    "topic": "metadata",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Зачем нужен `metadataBase` и где его обычно объявляют?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Он задаёт канонический адрес страницы для поисковых систем",
+        "feedback": "Канонический адрес — отдельное поле `alternates.canonical`; `metadataBase` лишь даёт базу для относительных путей."
+      },
+      {
+        "id": "b",
+        "text": "Он обязателен: без него метаданные не собираются",
+        "feedback": "Он не обязателен — без него URL-поля просто придётся писать абсолютными."
+      },
+      {
+        "id": "c",
+        "text": "Он задаёт базовый URL, чтобы поля метаданных можно было писать относительным путём; объявляют обычно в корневом layout",
+        "feedback": "Верно: относительный путь склеивается с базой в полный URL, а корневой layout распространяет базу на все роуты."
+      },
+      {
+        "id": "d",
+        "text": "Он задаёт префикс, с которого отдаются статические ассеты",
+        "feedback": "За ассеты отвечает `assetPrefix` в конфиге, а не метаданные."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "`metadataBase` задаёт базовый префикс URL для полей метаданных, которым нужен полный адрес. Он действует на **текущий сегмент роута и ниже**, а относительный путь склеивается с базой в полный URL.\n\nОбычно его ставят в корневом `app/layout.js`, чтобы он применялся ко всем URL-полям во всех роутах.",
+    "caveat": "Если `generateMetadata` помечена `use cache`, возвращаемое значение обязано быть сериализуемым: экземпляры `URL` кэширующие функции не поддерживают, поэтому базу возвращают строкой через `toString()`.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "meta-memoize",
+    "topic": "metadata",
+    "difficulty": 2,
+    "type": "find-the-bug",
+    "prompt": "Один и тот же пост запрашивается дважды — в метаданных и в самой странице. Как убрать дубль?",
+    "code": {
+      "language": "ts",
+      "content": "// app/blog/[slug]/page.tsx\nexport async function generateMetadata({ params }) {\n  const post = await getPost((await params).slug)\n  return { title: post.title }\n}\n\nexport default async function Page({ params }) { /* снова getPost */ }"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Передать данные из `generateMetadata` в компонент страницы",
+        "feedback": "Такого канала нет: `generateMetadata` и компонент вызываются независимо."
+      },
+      {
+        "id": "b",
+        "text": "Обернуть функцию получения данных в `React.cache` — тогда за один запрос она выполнится один раз",
+        "feedback": "Верно: мемоизация действует в пределах одного запроса, и обе точки получат один результат."
+      },
+      {
+        "id": "c",
+        "text": "Сохранить результат в переменную модуля",
+        "feedback": "Переменная модуля живёт дольше запроса и на сервере станет общей для разных пользователей."
+      },
+      {
+        "id": "d",
+        "text": "Пометить страницу `use cache`",
+        "feedback": "Кэширует результат между запросами, но дубль внутри одного запроса не убирает."
+      }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Когда одни и те же данные нужны и метаданным, и странице, документация советует обернуть функцию их получения в React-функцию `cache`. Она мемоизирует возвращаемое значение, и запрос выполняется один раз, хотя вызовов два.\n\nЭто тот же приём, что и для дедупликации обращений к базе внутри одного рендера: `fetch` мемоизируется сам, а произвольная async-функция — нет.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/metadata-and-og-images#memoizing-data-requests",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "meta-streaming",
+    "topic": "metadata",
+    "difficulty": 3,
+    "type": "multiple-choice",
+    "prompt": "Что происходит с метаданными на динамически отрисованной странице?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Они стримятся отдельно и вставляются в HTML, когда `generateMetadata` разрешится, не блокируя отрисовку интерфейса; для ботов стриминг отключается",
+        "feedback": "Верно: визуальное содержимое уходит первым, а боты, которым метаданные нужны в `<head>`, получают их до содержимого."
+      },
+      {
+        "id": "b",
+        "text": "Они дописываются на клиенте после гидратации",
+        "feedback": "Метаданные вставляются в HTML на сервере, а не клиентским кодом."
+      },
+      {
+        "id": "c",
+        "text": "Они вычисляются на сборке и для динамических страниц не обновляются",
+        "feedback": "На сборке метаданные разрешаются у пререндеренных страниц — там стриминг и не нужен."
+      },
+      {
+        "id": "d",
+        "text": "Ответ ждёт готовности метаданных целиком",
+        "feedback": "Это как раз то, чего стриминг метаданных избегает — и то, что происходит с ботами."
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Для динамически отрисовываемых страниц Next.js стримит метаданные отдельно, вставляя их в HTML после того, как `generateMetadata` разрешится, — не блокируя отрисовку интерфейса. Так визуальное содержимое доходит до пользователя раньше.\n\nДля ботов и краулеров, которые ждут метаданные в теге `<head>` — `Twitterbot`, `Slackbot`, `Bingbot` — стриминг **отключается**; их определяют по заголовку User-Agent. Настроить или отключить это поведение целиком можно опцией `htmlLimitedBots`.\n\nУ пререндеренных страниц стриминг не используется: метаданные разрешены ещё на сборке.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/metadata-and-og-images#streaming-metadata",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "meta-file-conventions",
+    "topic": "metadata",
+    "difficulty": 1,
+    "type": "multiple-choice",
+    "prompt": "Какие метаданные задаются файлом, а не экспортом?",
+    "options": [
+      {
+        "id": "a",
+        "text": "`favicon.ico`, `opengraph-image.jpg`, `robots.txt` и `sitemap.xml` — Next.js распознаёт их по имени",
+        "feedback": "Верно: это специальные файлы, которые превращаются в соответствующие теги и маршруты."
+      },
+      {
+        "id": "b",
+        "text": "Только `manifest.json` для прогрессивных приложений",
+        "feedback": "Манифест — одна из конвенций, но далеко не единственная."
+      },
+      {
+        "id": "c",
+        "text": "Никакие: в App Router всё объявляется экспортами",
+        "feedback": "Файловые конвенции — третий способ задания метаданных наряду с объектом и функцией."
+      },
+      {
+        "id": "d",
+        "text": "Только иконки — всё остальное объявляется объектом `Metadata`",
+        "feedback": "Файловых конвенций больше: `robots`, `sitemap` и изображения Open Graph тоже задаются файлами."
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Помимо объекта `Metadata` и функции `generateMetadata` есть третий способ — специальные файлы, которые Next.js распознаёт по имени: иконки (`favicon.ico`, `apple-icon.jpg`, `icon.jpg`), изображения Open Graph и Twitter (`opengraph-image.jpg`, `twitter-image.jpg`), `robots.txt` и `sitemap.xml`.\n\nИзображения при этом бывают и статическими файлами, и генерируемыми — тогда рядом кладут `opengraph-image.tsx`, который строит картинку через `ImageResponse` из JSX и CSS.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/metadata-and-og-images#file-based-metadata",
+    "nextVersion": "16.3"
+  }
+]
