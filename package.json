@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "content": "tsx scripts/build-content.ts",
+    "shuffle": "tsx scripts/shuffle-answers.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
