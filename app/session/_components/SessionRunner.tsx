@@ -302,9 +302,12 @@ export function SessionRunner() {
           <div ref={explanationRef} className="scroll-mt-4">
             <Explanation question={question} isCorrect={answer.isCorrect} />
           </div>
-          {/* На телефоне кнопка липнет к низу экрана, чтобы до неё не пришлось
-              пролистывать весь разбор. На широком экране идёт следом за ним. */}
-          <div className="mt-4 flex items-center gap-3 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-20 max-sm:mt-0 max-sm:border-t max-sm:border-stone-200 max-sm:bg-stone-50/95 max-sm:px-4 max-sm:py-3 max-sm:backdrop-blur">
+          {/* Кнопка липнет к низу экрана, пока разбор длиннее вьюпорта, и
+              оседает в конце содержимого, когда он дочитан. sticky, а не fixed:
+              элемент остаётся в потоке, поэтому не перекрывает конец разбора и
+              не требует запаса снизу. Ширина — по колонке контента, на телефоне
+              панель во всю ширину экрана. */}
+          <div className="sticky bottom-0 z-20 -mx-4 mt-4 flex items-center gap-3 border-t border-stone-200 bg-stone-50/90 px-4 py-3 backdrop-blur sm:-mx-2 sm:rounded-xl sm:border sm:px-3 sm:shadow-sm">
             <button
               ref={nextButtonRef}
               type="button"
@@ -315,6 +318,9 @@ export function SessionRunner() {
             </button>
             <span className="text-xs text-stone-500 max-sm:hidden">
               или <kbd className="rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 font-mono">Enter</kbd>
+            </span>
+            <span className="ml-auto text-xs tabular-nums text-stone-400 max-sm:hidden">
+              {state.currentIndex + 1} / {state.questions.length}
             </span>
           </div>
         </>
