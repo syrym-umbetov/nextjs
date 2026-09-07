@@ -32,6 +32,8 @@ export type SessionAction =
   | { type: 'failed'; message: string }
   | { type: 'answer'; optionId: string; responseMs: number }
   | { type: 'next' }
+  /** Переход к уже показанному вопросу — например по кнопке «назад» в браузере. */
+  | { type: 'goto'; index: number }
   | { type: 'restart' }
 
 export const initialSessionState: SessionState = {
@@ -43,6 +45,11 @@ export const initialSessionState: SessionState = {
   errorMessage: null,
 }
 
+/** Ответ, записанный для конкретного вопроса, если он уже был дан. */
+export function answerFor(state: SessionState, questionId: string): AnswerRecord | undefined {
+  return state.answers.find((answer) => answer.questionId === questionId)
+}
+
 export function currentQuestion(state: SessionState): RenderedQuestion | null {
   return state.questions[state.currentIndex] ?? null
 }
@@ -50,6 +57,20 @@ export function currentQuestion(state: SessionState): RenderedQuestion | null {
 /** Разбор показан ровно тогда, когда вариант уже выбран. */
 export function isRevealed(state: SessionState): boolean {
   return state.status === 'active' && state.selectedOptionId !== null
+}
+
+/**
+ * Переход к вопросу с восстановлением ранее данного ответа: если вопрос уже
+ * отвечали, разбор показывается сразу, а не запрашивается заново.
+ */
+function moveTo(state: SessionState, index: number): SessionState {
+  const question = state.questions[index]
+  const recorded = question ? answerFor(state, question.id) : undefined
+  return {
+    ...state,
+    currentIndex: index,
+    selectedOptionId: recorded?.selectedOptionId ?? null,
+  }
 }
 
 export function sessionReducer(state: SessionState, action: SessionAction): SessionState {
@@ -70,6 +91,9 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
 
       const question = currentQuestion(state)
       if (!question) return state
+      // Вернулись назад к отвеченному вопросу — ответ уже записан, второй раз
+      // засчитывать его нельзя: это исказило бы статистику и расписание SM-2.
+      if (answerFor(state, question.id)) return state
       if (!question.options.some((option) => option.id === action.optionId)) return state
 
       const record: AnswerRecord = {
@@ -89,7 +113,14 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       if (nextIndex >= state.questions.length) {
         return { ...state, status: 'summary', selectedOptionId: null }
       }
-      return { ...state, currentIndex: nextIndex, selectedOptionId: null }
+      return moveTo(state, nextIndex)
+    }
+
+    case 'goto': {
+      if (state.status !== 'active' && state.status !== 'summary') return state
+      if (!Number.isInteger(action.index)) return state
+      if (action.index < 0 || action.index >= state.questions.length) return state
+      return moveTo({ ...state, status: 'active' }, action.index)
     }
 
     case 'restart':

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RenderedQuestion } from './question'
 import {
+  answerFor,
   currentQuestion,
   initialSessionState,
   isRevealed,
@@ -97,6 +98,70 @@ describe('sessionReducer', () => {
   it('restart возвращает к исходному состоянию', () => {
     const state = sessionReducer(loaded(['q1']), { type: 'answer', optionId: 'a', responseMs: 1 })
     expect(sessionReducer(state, { type: 'restart' })).toEqual(initialSessionState)
+  })
+})
+
+describe('sessionReducer: переход назад', () => {
+  function answered(ids: string[]): SessionState {
+    let state = sessionReducer(initialSessionState, {
+      type: 'loaded',
+      questions: ids.map((id) => question(id)),
+    })
+    for (let i = 0; i < ids.length; i += 1) {
+      state = sessionReducer(state, { type: 'answer', optionId: i === 0 ? 'b' : 'a', responseMs: 100 })
+      state = sessionReducer(state, { type: 'next' })
+    }
+    return state
+  }
+
+  it('возвращает к отвеченному вопросу и восстанавливает данный ответ', () => {
+    const state = sessionReducer(answered(['q1', 'q2', 'q3']), { type: 'goto', index: 0 })
+    expect(state.status).toBe('active')
+    expect(currentQuestion(state)?.id).toBe('q1')
+    expect(state.selectedOptionId).toBe('b')
+    expect(isRevealed(state)).toBe(true)
+  })
+
+  it('повторный ответ на уже отвеченный вопрос не переписывает результат', () => {
+    const back = sessionReducer(answered(['q1', 'q2']), { type: 'goto', index: 0 })
+    const again = sessionReducer({ ...back, selectedOptionId: null }, {
+      type: 'answer', optionId: 'a', responseMs: 1,
+    })
+    expect(again.answers).toHaveLength(2)
+    expect(answerFor(again, 'q1')?.selectedOptionId).toBe('b')
+  })
+
+  it('«дальше» с возвращённого вопроса восстанавливает ответ следующего', () => {
+    let state = sessionReducer(answered(['q1', 'q2', 'q3']), { type: 'goto', index: 0 })
+    state = sessionReducer(state, { type: 'next' })
+    expect(currentQuestion(state)?.id).toBe('q2')
+    expect(isRevealed(state)).toBe(true)
+  })
+
+  it('возвращает с экрана итогов к последнему вопросу', () => {
+    const state = answered(['q1', 'q2'])
+    expect(state.status).toBe('summary')
+    const back = sessionReducer(state, { type: 'goto', index: 1 })
+    expect(back.status).toBe('active')
+    expect(currentQuestion(back)?.id).toBe('q2')
+  })
+
+  it('индекс вне диапазона и нецелый игнорируются', () => {
+    const state = answered(['q1', 'q2'])
+    expect(sessionReducer(state, { type: 'goto', index: -1 })).toBe(state)
+    expect(sessionReducer(state, { type: 'goto', index: 5 })).toBe(state)
+    expect(sessionReducer(state, { type: 'goto', index: 1.5 })).toBe(state)
+  })
+
+  it('на неотвеченном вопросе разбор не показывается', () => {
+    let state = sessionReducer(initialSessionState, {
+      type: 'loaded',
+      questions: [question('q1'), question('q2')],
+    })
+    state = sessionReducer(state, { type: 'answer', optionId: 'a', responseMs: 1 })
+    state = sessionReducer(state, { type: 'next' })
+    expect(isRevealed(state)).toBe(false)
+    expect(state.selectedOptionId).toBeNull()
   })
 })
 

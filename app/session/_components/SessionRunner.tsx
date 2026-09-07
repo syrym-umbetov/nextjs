@@ -14,6 +14,7 @@ import {
 import { PROGRESS_VERSION, type QuestionStats } from '@/lib/progress'
 import { selectSession } from '@/lib/select'
 import {
+  answerFor,
   currentQuestion,
   initialSessionState,
   isRevealed,
@@ -141,6 +142,34 @@ export function SessionRunner() {
     dispatch({ type: 'next' })
   }, [])
 
+  // Каждый показанный вопрос получает свою запись в истории браузера, чтобы
+  // кнопка «назад» возвращала к предыдущему вопросу, а не уводила из сессии.
+  // Индекс, равный числу вопросов, обозначает экран итогов.
+  useEffect(() => {
+    if (state.status !== 'active' && state.status !== 'summary') return
+
+    const position = state.status === 'summary' ? state.questions.length : state.currentIndex
+    const current = (window.history.state as { questionIndex?: number } | null)?.questionIndex
+
+    if (current === undefined) {
+      window.history.replaceState({ questionIndex: position }, '')
+    } else if (current !== position) {
+      window.history.pushState({ questionIndex: position }, '')
+    }
+  }, [state.status, state.currentIndex, state.questions.length])
+
+  useEffect(() => {
+    function onPopState(event: PopStateEvent) {
+      const index = (event.state as { questionIndex?: number } | null)?.questionIndex
+      if (typeof index !== 'number') return
+      questionStartedAt.current = Date.now()
+      dispatch({ type: 'goto', index })
+    }
+
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
   const handleRestart = useCallback(() => {
     persistedCount.current = 0
     dispatch({ type: 'restart' })
@@ -263,7 +292,7 @@ export function SessionRunner() {
 
   if (!question) return null
 
-  const answer = state.answers.at(-1)
+  const answer = answerFor(state, question.id)
   const isLast = state.currentIndex === state.questions.length - 1
 
   return (
