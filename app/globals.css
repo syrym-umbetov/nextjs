@@ -5,6 +5,15 @@
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
+/* На широком экране текст крупнее: размеры в приложении заданы в rem, поэтому
+   достаточно поднять корневой кегль — вместе с ним растут и отступы, заданные
+   в rem, и подсветка кода. На телефоне остаётся 16px. */
+@media (min-width: 640px) {
+  html {
+    font-size: 17px;
+  }
+}
+
 /* Shiki отдаёт готовый <pre class="shiki">, обёртку стилизуем здесь. */
 .shiki {
   overflow-x: auto;

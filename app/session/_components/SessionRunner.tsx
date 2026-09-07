@@ -24,6 +24,7 @@ import { createInitialCardState, gradeFromAnswer, review, toDayString } from '@/
 import { loadProgress, saveProgress } from '@/lib/storage'
 import { Explanation } from './Explanation'
 import { QuestionCard } from './QuestionCard'
+import { SessionSkeleton } from './SessionSkeleton'
 import { Summary } from './Summary'
 
 async function fetchJson(url: string, signal: AbortSignal): Promise<unknown> {
@@ -45,6 +46,7 @@ export function SessionRunner() {
   const questionStartedAt = useRef(Date.now())
   const persistedCount = useRef(0)
   const nextButtonRef = useRef<HTMLButtonElement>(null)
+  const explanationRef = useRef<HTMLDivElement>(null)
 
   // Загрузка сессии: сначала лёгкий индекс, затем — только тела тех вопросов,
   // которые отобрал планировщик. Остальные 20+ вопросов в браузер не попадают.
@@ -144,8 +146,26 @@ export function SessionRunner() {
   }, [])
 
   // Разбор появился — уводим фокус на «Дальше», чтобы Enter сработал нативно.
+  // preventScroll обязателен: иначе браузер сам прокрутит страницу к кнопке
+  // и отложенная прокрутка к разбору ниже потеряет смысл.
   useEffect(() => {
-    if (revealed) nextButtonRef.current?.focus()
+    if (revealed) nextButtonRef.current?.focus({ preventScroll: true })
+  }, [revealed, state.currentIndex])
+
+  // Через четыре секунды после ответа подводим разбор под глаза: этого хватает,
+  // чтобы заметить, верным ли был ответ, и не выдёргивает страницу мгновенно.
+  useEffect(() => {
+    if (!revealed) return
+
+    const timer = window.setTimeout(() => {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      explanationRef.current?.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'start',
+      })
+    }, 4000)
+
+    return () => window.clearTimeout(timer)
   }, [revealed, state.currentIndex])
 
   // Клавиатура: 1–4 выбирают вариант, Enter переходит дальше.
@@ -185,7 +205,7 @@ export function SessionRunner() {
   const heading = topic ? TOPIC_TITLES[topic] : 'Все темы'
 
   if (state.status === 'loading') {
-    return <p className="text-sm text-stone-500">Подбираем вопросы…</p>
+    return <SessionSkeleton />
   }
 
   if (state.status === 'error') {
@@ -260,17 +280,21 @@ export function SessionRunner() {
 
       {revealed && answer && (
         <>
-          <Explanation question={question} isCorrect={answer.isCorrect} />
-          <div className="mt-4 flex items-center gap-3">
+          <div ref={explanationRef} className="scroll-mt-4">
+            <Explanation question={question} isCorrect={answer.isCorrect} />
+          </div>
+          {/* На телефоне кнопка липнет к низу экрана, чтобы до неё не пришлось
+              пролистывать весь разбор. На широком экране идёт следом за ним. */}
+          <div className="mt-4 flex items-center gap-3 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-20 max-sm:mt-0 max-sm:border-t max-sm:border-stone-200 max-sm:bg-stone-50/95 max-sm:px-4 max-sm:py-3 max-sm:backdrop-blur">
             <button
               ref={nextButtonRef}
               type="button"
               onClick={handleNext}
-              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 max-sm:w-full max-sm:py-3 max-sm:text-base"
             >
               {isLast ? 'Итоги' : 'Дальше'}
             </button>
-            <span className="text-xs text-stone-500">
+            <span className="text-xs text-stone-500 max-sm:hidden">
               или <kbd className="rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 font-mono">Enter</kbd>
             </span>
           </div>

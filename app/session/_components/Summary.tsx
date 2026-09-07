@@ -34,7 +34,7 @@ export function Summary({ result, onRestart }: { result: SessionResult; onRestar
                 <p className="text-xs text-stone-500">{TOPIC_TITLES[question.topic]}</p>
                 <Markdown
                   text={question.prompt}
-                  className="mt-1 text-[15px] leading-relaxed text-stone-800"
+                  className="mt-1 text-[0.9375rem] leading-relaxed text-stone-800"
                 />
                 <a
                   href={question.docsUrl}

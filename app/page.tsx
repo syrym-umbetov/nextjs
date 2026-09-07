@@ -27,7 +27,7 @@ export default async function HomePage() {
         <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
           Тренажёр по документации Next.js
         </h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-stone-600">
+        <p className="mt-2 text-[0.9375rem] leading-relaxed text-stone-600">
           Вопросы по App Router с разбором и ссылкой на раздел документации. Вопросы возвращаются
           по алгоритму SM-2, прогресс хранится в этом браузере.
         </p>

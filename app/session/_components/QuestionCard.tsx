@@ -51,7 +51,7 @@ export function QuestionCard({
       </header>
 
       <div className="px-5 py-4">
-        <Markdown text={question.prompt} className="text-[15px] leading-relaxed text-stone-800" />
+        <Markdown text={question.prompt} className="text-[0.9375rem] leading-relaxed text-stone-800" />
 
         {question.codeHtml && (
           <div className="mt-4 overflow-hidden rounded-lg border border-stone-200">
@@ -84,7 +84,7 @@ export function QuestionCard({
                     onClick={() => onSelect(option.id)}
                     aria-keyshortcuts={position < 9 ? String(position + 1) : undefined}
                     aria-pressed={isChosen}
-                    className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left text-[15px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 disabled:cursor-default ${tone}`}
+                    className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left text-[0.9375rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 disabled:cursor-default ${tone}`}
                   >
                     <kbd className="mt-0.5 shrink-0 rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-600">
                       {position + 1}
