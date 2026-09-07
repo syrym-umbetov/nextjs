@@ -57,21 +57,21 @@
     "options": [
       {
         "id": "a",
-        "label": "родитель relative",
-        "code": {
-          "language": "tsx",
-          "content": "<div style={{ position: 'relative' }}>\n  <Image src=\"/hero.png\" alt=\"\" fill />\n</div>"
-        },
-        "feedback": "Верно: у родителя задан `position: relative`, и изображение позиционируется относительно него."
-      },
-      {
-        "id": "b",
         "label": "родитель без position",
         "code": {
           "language": "tsx",
           "content": "<div style={{ width: 400 }}>\n  <Image src=\"/hero.png\" alt=\"\" fill />\n</div>"
         },
         "feedback": "Ширина задана, но `position` нет. Изображение с `position: absolute` отсчитается от ближайшего позиционированного предка выше по дереву."
+      },
+      {
+        "id": "b",
+        "label": "родитель relative",
+        "code": {
+          "language": "tsx",
+          "content": "<div style={{ position: 'relative' }}>\n  <Image src=\"/hero.png\" alt=\"\" fill />\n</div>"
+        },
+        "feedback": "Верно: у родителя задан `position: relative`, и изображение позиционируется относительно него."
       },
       {
         "id": "c",
@@ -92,7 +92,7 @@
         "feedback": "`fill` и явные размеры противоречат друг другу: первый растягивает изображение по родителю, вторые задают фиксированный размер."
       }
     ],
-    "correctOptionId": "a",
+    "correctOptionId": "b",
     "explanation": "`fill` заставляет изображение занять размер родительского элемента. Само оно получает `position: absolute`, поэтому отсчитывается от ближайшего позиционированного предка.\n\nОтсюда требование: родитель обязан объявить `position` — `relative`, `fixed` или `absolute`. Без этого изображение «убежит» к другому предку или к корню документа.",
     "footnote": "Если стили изображению не заданы, оно растянется под контейнер целиком. Обрезкой и масштабированием управляет `objectFit`.",
     "docsUrl": "https://nextjs.org/docs/app/api-reference/components/image#fill",
@@ -156,12 +156,12 @@
     "options": [
       {
         "id": "a",
-        "label": "локальный шрифт",
+        "label": "невариативный с весом",
         "code": {
           "language": "ts",
-          "content": "import localFont from 'next/font/local'\n\nconst my = localFont({\n  src: './my-font.woff2',\n})"
+          "content": "import { Roboto } from 'next/font/google'\n\nconst roboto = Roboto({\n  weight: '400',\n  subsets: ['latin'],\n})"
         },
-        "feedback": "У локального шрифта файл указан напрямую, поэтому начертание известно из самого `src`."
+        "feedback": "Требование выполнено: начертание указано явно."
       },
       {
         "id": "b",
@@ -174,21 +174,21 @@
       },
       {
         "id": "c",
+        "label": "локальный шрифт",
+        "code": {
+          "language": "ts",
+          "content": "import localFont from 'next/font/local'\n\nconst my = localFont({\n  src: './my-font.woff2',\n})"
+        },
+        "feedback": "У локального шрифта файл указан напрямую, поэтому начертание известно из самого `src`."
+      },
+      {
+        "id": "d",
         "label": "вариативный шрифт",
         "code": {
           "language": "ts",
           "content": "import { Inter } from 'next/font/google'\n\nconst inter = Inter({\n  subsets: ['latin'],\n})"
         },
         "feedback": "Inter вариативный: диапазон начертаний уже внутри файла, отдельный `weight` не требуется."
-      },
-      {
-        "id": "d",
-        "label": "невариативный с весом",
-        "code": {
-          "language": "ts",
-          "content": "import { Roboto } from 'next/font/google'\n\nconst roboto = Roboto({\n  weight: '400',\n  subsets: ['latin'],\n})"
-        },
-        "feedback": "Требование выполнено: начертание указано явно."
       }
     ],
     "correctOptionId": "b",
@@ -205,15 +205,6 @@
     "options": [
       {
         "id": "a",
-        "label": "опция variable",
-        "code": {
-          "language": "tsx",
-          "content": "const inter = Inter({\n  subsets: ['latin'],\n  variable: '--font-inter',\n})\n\n<html className={inter.variable}>"
-        },
-        "feedback": "Верно: опция объявляет CSS-переменную, а `inter.variable` вешает класс, который её определяет."
-      },
-      {
-        "id": "b",
         "label": "применение className",
         "code": {
           "language": "tsx",
@@ -222,27 +213,469 @@
         "feedback": "Рабочий способ применить шрифт напрямую, но CSS-переменной он не создаёт, и Tailwind сослаться на него не сможет."
       },
       {
-        "id": "c",
-        "label": "имя семейства строкой",
+        "id": "b",
+        "label": "опция variable",
         "code": {
           "language": "tsx",
-          "content": "<html style={{\n  '--font-inter': 'Inter, sans-serif',\n} as React.CSSProperties}>"
+          "content": "const inter = Inter({\n  subsets: ['latin'],\n  variable: '--font-inter',\n})\n\n<html className={inter.variable}>"
         },
-        "feedback": "Переменная объявлена, но шрифт при этом не самохостится: браузер будет искать его на устройстве или в сети."
+        "feedback": "Верно: опция объявляет CSS-переменную, а `inter.variable` вешает класс, который её определяет."
       },
       {
-        "id": "d",
+        "id": "c",
         "label": "инлайновый style",
         "code": {
           "language": "tsx",
           "content": "const inter = Inter({ subsets: ['latin'] })\n\n<html style={{ fontFamily: inter.style.fontFamily }}>"
         },
         "feedback": "Задаёт семейство инлайном, но переменной не появляется — правилам Tailwind опереться не на что."
+      },
+      {
+        "id": "d",
+        "label": "имя семейства строкой",
+        "code": {
+          "language": "tsx",
+          "content": "<html style={{\n  '--font-inter': 'Inter, sans-serif',\n} as React.CSSProperties}>"
+        },
+        "feedback": "Переменная объявлена, но шрифт при этом не самохостится: браузер будет искать его на устройстве или в сети."
+      }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Опция `variable` объявляет CSS-переменную с указанным именем. Класс из `font.variable` вешают на элемент — обычно на `<html>` — и переменная становится доступна вложенным правилам, в том числе конфигурации Tailwind.\n\nОтличие от `className` в том, что второй применяет шрифт напрямую и не даёт имени, на которое можно сослаться из CSS.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/components/font#variable",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "css-global-import-place",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "pick-the-code",
+    "prompt": "Глобальные стили должны применяться ко **всем** роутам. Где их импортировать?",
+    "options": [
+      {
+        "id": "a",
+        "label": "импорт внутри css",
+        "code": {
+          "language": "css",
+          "content": "/* app/blog/blog.module.css */\n@import '../global.css';\n\n.blog { padding: 24px; }"
+        },
+        "feedback": "Затаскивает глобальные правила внутрь модуля и размывает границу между локальными и глобальными стилями."
+      },
+      {
+        "id": "b",
+        "label": "глобальный как модуль",
+        "code": {
+          "language": "tsx",
+          "content": "// app/layout.tsx\nimport styles from './global.module.css'\n\n<body className={styles.body}>"
+        },
+        "feedback": "Расширение `.module.css` включает локальную область видимости — глобальными такие стили уже не будут."
+      },
+      {
+        "id": "c",
+        "label": "файл страницы",
+        "code": {
+          "language": "tsx",
+          "content": "// app/page.tsx\nimport './global.css'\n\nexport default function Page() {\n  return <main>Главная</main>\n}"
+        },
+        "feedback": "Стили подключатся, но только там, куда доходит этот модуль, — на остальные роуты они не попадут."
+      },
+      {
+        "id": "d",
+        "label": "корневой layout",
+        "code": {
+          "language": "tsx",
+          "content": "// app/layout.tsx\nimport './global.css'\n\nexport default function RootLayout({ children }) {\n  return <html><body>{children}</body></html>\n}"
+        },
+        "feedback": "Верно: импорт в корневом layout распространяет стили на каждый роут приложения."
+      }
+    ],
+    "correctOptionId": "d",
+    "explanation": "Глобальный файл создают в `app` и импортируют в корневом layout — тогда стили применяются к **каждому** роуту приложения.\n\nЭто же место документация рекомендует и для Tailwind: подключать его в корне приложения. Заодно так проще держать порядок стилей предсказуемым — импорты собраны в одной точке входа.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/css#global-css",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "css-order-imports",
+    "topic": "styling",
+    "difficulty": 3,
+    "type": "predict-output",
+    "prompt": "В каком порядке попадут стили в итоговый CSS?",
+    "code": {
+      "language": "tsx",
+      "content": "import { BaseButton } from './base-button'\nimport styles from './page.module.css'\n\nexport default function Page() {\n  return <BaseButton className={styles.primary} />\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "По алфавиту имён файлов",
+        "feedback": "Алфавит ни при чём: порядок определяется тем, в каком порядке модули импортированы."
+      },
+      {
+        "id": "b",
+        "text": "Сначала `base-button.module.css`, потом `page.module.css` — порядок определяется порядком импортов в коде",
+        "feedback": "Верно: Next.js объединяет таблицы стилей на сборке, а их порядок задаётся порядком импортов. `BaseButton` импортирован раньше, значит и его стили идут раньше."
+      },
+      {
+        "id": "c",
+        "text": "Порядок не определён, полагаться на него нельзя",
+        "feedback": "Порядок как раз определён и предсказуем. Другое дело, что он легко ломается автосортировкой импортов."
+      },
+      {
+        "id": "d",
+        "text": "Сначала стили страницы, потом вложенных компонентов",
+        "feedback": "Глубина в дереве компонентов на порядок не влияет — влияет порядок импортов в файле."
+      }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Next.js объединяет таблицы стилей на продакшен-сборке, и **порядок CSS зависит от порядка импортов в коде**. В примере `BaseButton` импортирован раньше `page.module.css`, поэтому его стили окажутся выше.\n\nОтсюда практическая рекомендация: выключить линтеры и форматтеры, автоматически сортирующие импорты, — например правило `sort-imports` в ESLint. Иначе порядок стилей поедет вслед за порядком импортов.",
+    "footnote": "Порядок стилей в разработке может отличаться от продакшена, поэтому итоговый результат проверяют именно сборкой `next build`.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/css#ordering-and-merging",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "css-order-recommendations",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Что документация советует, чтобы порядок CSS оставался предсказуемым?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Свести все стили в один глобальный файл",
+        "feedback": "Порядок станет предсказуемым, но потеряется разделение кода: на роут будет грузиться весь CSS сразу."
+      },
+      {
+        "id": "b",
+        "text": "Расставить `!important` в местах, где важен приоритет",
+        "feedback": "Обходит симптом вместо причины и делает стили неподдерживаемыми."
+      },
+      {
+        "id": "c",
+        "text": "Держать импорты CSS в одном входном файле, глобальные стили подключать в корне приложения и выключить автосортировку импортов",
+        "feedback": "Верно: все три пункта прямо перечислены в рекомендациях."
+      },
+      {
+        "id": "d",
+        "text": "Называть файлы так, чтобы алфавитный порядок совпадал с нужным",
+        "feedback": "Алфавит на порядок не влияет: он определяется порядком импортов."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "Рекомендации из документации: держать импорты CSS в одном входном файле, глобальные стили и Tailwind подключать в корне приложения, выносить общие стили в общие компоненты, чтобы не дублировать импорты, и выключить автосортировку импортов.\n\nЕщё один рычаг — опция `cssChunking` в `next.config.js`: она управляет тем, как таблицы стилей разбиваются на части.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/css#recommendations",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "css-dev-vs-prod",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Чем поведение CSS в разработке отличается от продакшена?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Разницы нет: сборка отличается только минификацией",
+        "feedback": "Минификация — не единственное отличие: в продакшене файлы ещё и объединяются с разделением по роутам, а порядок может отличаться от девелоперского."
+      },
+      {
+        "id": "b",
+        "text": "В продакшене весь CSS собирается в один файл",
+        "feedback": "Файлов получается много: они минифицируются и разделяются по коду, чтобы на роут грузился минимум стилей."
+      },
+      {
+        "id": "c",
+        "text": "В разработке стили обновляются мгновенно через Fast Refresh, а порядок может отличаться от итогового — проверять надо сборкой",
+        "feedback": "Верно: оба факта названы в документации, и второй — причина проверять порядок именно на `next build`."
+      },
+      {
+        "id": "d",
+        "text": "В продакшене CSS не загрузится при отключённом JavaScript",
+        "feedback": "Наоборот: в продакшене CSS грузится и без JavaScript. Он нужен в разработке — для Fast Refresh."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "В разработке (`next dev`) правки CSS применяются мгновенно благодаря Fast Refresh. В продакшене (`next build`) все файлы объединяются в несколько минифицированных файлов с разделением по коду, чтобы на роут загружался минимальный объём стилей.\n\nОтдельно стоит запомнить: CSS в продакшене грузится и при отключённом JavaScript — тот нужен только в разработке ради Fast Refresh.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/css#development-vs-production",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "css-modules-scoping",
+    "topic": "styling",
+    "difficulty": 1,
+    "type": "multiple-choice",
+    "prompt": "Как CSS-модули избавляют от коллизий имён классов?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Генерируют уникальные имена классов, поэтому один и тот же класс можно объявлять в разных файлах",
+        "feedback": "Верно: локальная область видимости достигается именно генерацией уникальных имён."
+      },
+      {
+        "id": "b",
+        "text": "Добавляют к классам префикс с именем компонента, который надо не забыть указать",
+        "feedback": "Ничего указывать не нужно: имена генерируются сами при сборке."
+      },
+      {
+        "id": "c",
+        "text": "Проверяют коллизии при сборке и роняют её при совпадении имён",
+        "feedback": "Сборка не падает: совпадающие имена в разных модулях — штатная ситуация, ради которой механизм и создан."
+      },
+      {
+        "id": "d",
+        "text": "Оборачивают компонент в Shadow DOM",
+        "feedback": "Shadow DOM здесь не используется — механизм чисто сборочный."
       }
     ],
     "correctOptionId": "a",
-    "explanation": "Опция `variable` объявляет CSS-переменную с указанным именем. Класс из `font.variable` вешают на элемент — обычно на `<html>` — и переменная становится доступна вложенным правилам, в том числе конфигурации Tailwind.\n\nОтличие от `className` в том, что второй применяет шрифт напрямую и не даёт имени, на которое можно сослаться из CSS.",
-    "docsUrl": "https://nextjs.org/docs/app/api-reference/components/font#variable",
+    "explanation": "CSS-модули дают локальную область видимости, генерируя уникальные имена классов. Благодаря этому один и тот же класс можно использовать в разных файлах, не думая о столкновениях.\n\nРаботает это по расширению файла: `.module.css` обрабатывается как модуль, а обычный `.css` попадает в глобальную область.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/css#css-modules",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "img-remote-patterns",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "pick-the-code",
+    "prompt": "Изображения приходят с `s3.amazonaws.com`. Какая настройка разрешает их **безопасно**?",
+    "options": [
+      {
+        "id": "a",
+        "label": "хост целиком",
+        "code": {
+          "language": "ts",
+          "content": "remotePatterns: [{\n  protocol: 'https',\n  hostname: 's3.amazonaws.com',\n  pathname: '/**',\n}]"
+        },
+        "feedback": "Работать будет, но разрешит любой бакет на этом хосте — шаблон стоит сузить до своего пути."
+      },
+      {
+        "id": "b",
+        "label": "любой хост",
+        "code": {
+          "language": "ts",
+          "content": "remotePatterns: [{\n  protocol: 'https',\n  hostname: '**',\n  pathname: '/**',\n}]"
+        },
+        "feedback": "Открывает оптимизацию для любого сайта в интернете: чужой ресурс сможет гонять трафик через ваш сервер."
+      },
+      {
+        "id": "c",
+        "label": "незашифрованный протокол",
+        "code": {
+          "language": "ts",
+          "content": "remotePatterns: [{\n  protocol: 'http',\n  hostname: 's3.amazonaws.com',\n  pathname: '/my-bucket/**',\n}]"
+        },
+        "feedback": "Путь сужен верно, но протокол незашифрованный: изображения поедут по открытому каналу."
+      },
+      {
+        "id": "d",
+        "label": "точный путь бакета",
+        "code": {
+          "language": "ts",
+          "content": "remotePatterns: [{\n  protocol: 'https',\n  hostname: 's3.amazonaws.com',\n  pathname: '/my-bucket/**',\n}]"
+        },
+        "feedback": "Верно: сужены и протокол, и хост, и путь — ровно та конкретность, которую советует документация."
+      }
+    ],
+    "correctOptionId": "d",
+    "explanation": "Чтобы безопасно разрешить изображения с внешних серверов, в `next.config.js` описывают список допустимых шаблонов URL. Документация формулирует принцип прямо: будьте настолько конкретны, насколько возможно, чтобы предотвратить злонамеренное использование.\n\nШаблон складывается из `protocol`, `hostname`, `port`, `pathname` и `search` — чем больше полей сужено, тем меньше поверхность для злоупотребления.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/images#remote-images",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "img-remote-dimensions",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Почему у изображения с внешнего URL приходится указывать `width` и `height` руками?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Размеры обязательны для всех изображений без исключения",
+        "feedback": "Исключения есть: статический импорт и `fill`."
+      },
+      {
+        "id": "b",
+        "text": "Для внешних изображений оптимизация отключена, а вместе с ней и вывод размеров",
+        "feedback": "Оптимизация как раз работает — для этого и нужен список `remotePatterns`."
+      },
+      {
+        "id": "c",
+        "text": "На сборке у Next.js нет доступа к удалённому файлу, поэтому вывести размеры неоткуда",
+        "feedback": "Верно: именно отсутствие доступа к файлу во время сборки и делает ручное указание обязательным."
+      },
+      {
+        "id": "d",
+        "text": "Мешает политика CORS внешнего сервера",
+        "feedback": "CORS относится к запросам из браузера и к выводу размеров на сборке отношения не имеет."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "Размеры выводятся автоматически только при статическом импорте, когда файл лежит в проекте. У внешнего URL такого доступа на сборке нет, поэтому `width`, `height` и необязательный `blurDataURL` задают вручную.\n\nНужны они не для вёрстки, а чтобы вывести пропорции и зарезервировать место — иначе при загрузке произойдёт сдвиг макета. Альтернатива, если размеры неизвестны, — `fill`.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/images#remote-images",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "img-dynamic-import",
+    "topic": "styling",
+    "difficulty": 3,
+    "type": "pick-the-code",
+    "prompt": "Путь к картинке известен **только** в рантайме, но размеры хочется получить автоматически. Как?",
+    "options": [
+      {
+        "id": "a",
+        "label": "динамический import",
+        "code": {
+          "language": "tsx",
+          "content": "const { default: img } = await import(\n  `./covers/${slug}.png`\n)\n\n<Image src={img} alt=\"\" />"
+        },
+        "feedback": "Верно: динамический `import()` в Server Component даёт те же автоматические `width`, `height` и `blurDataURL`, что и статический."
+      },
+      {
+        "id": "b",
+        "label": "вызов require",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src={require(`./covers/${slug}.png`)}\n  alt=\"\"\n/>"
+        },
+        "feedback": "Обходит систему модулей приложения; штатный приём из документации — динамический `import()`."
+      },
+      {
+        "id": "c",
+        "label": "строковый путь",
+        "code": {
+          "language": "tsx",
+          "content": "<Image\n  src={`/covers/${slug}.png`}\n  alt=\"\"\n/>"
+        },
+        "feedback": "Строковый `src` не даёт вывести размеры, и придётся задавать их вручную."
+      },
+      {
+        "id": "d",
+        "label": "запрос за размерами",
+        "code": {
+          "language": "tsx",
+          "content": "const size = await getImageSize(slug)\n\n<Image src={`/covers/${slug}.png`}\n  alt=\"\" {...size} />"
+        },
+        "feedback": "Добавляет лишний поход за данными там, где размеры можно получить из самого модуля."
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Когда статический `import` невозможен, документация предлагает динамический `import()` в Server Component: он даёт те же автоматические `width`, `height` и `blurDataURL`.\n\nЭто удобная середина между статическим импортом и строковым путём: путь вычисляется в рантайме, но модуль изображения всё равно проходит через сборщик, и метаданные оказываются доступны.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/images#images-without-static-imports",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "font-selfhosting",
+    "topic": "styling",
+    "difficulty": 1,
+    "type": "multiple-choice",
+    "prompt": "Что происходит при подключении шрифта через `next/font/google`?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Шрифт скачивается при каждом запросе и кэшируется на сервере",
+        "feedback": "Файлы попадают в статику на сборке, а не подтягиваются в рантайме."
+      },
+      {
+        "id": "b",
+        "text": "Используется системный шрифт с похожими метриками",
+        "feedback": "Похожий системный шрифт применяется только как запасной вариант на время загрузки."
+      },
+      {
+        "id": "c",
+        "text": "В `<head>` добавляется ссылка на CDN Google Fonts",
+        "feedback": "Именно от этого механизм и уходит: внешних запросов не остаётся."
+      },
+      {
+        "id": "d",
+        "text": "Шрифт самохостится: файлы включаются в статику и отдаются с того же домена, запросов к Google из браузера не уходит",
+        "feedback": "Верно: в этом и смысл — ни одного запроса к Google при визите пользователя."
+      }
+    ],
+    "correctOptionId": "d",
+    "explanation": "`next/font/google` позволяет самостоятельно разместить у себя любой шрифт Google. Файлы включаются как статические ассеты и отдаются с того же домена, что и приложение, — значит браузер пользователя не шлёт запросов к Google.\n\nВыигрыш двойной: нет обращения к стороннему домену с его задержкой на DNS и TLS, и нет утечки данных о посетителях.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/fonts",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "font-local-declaration",
+    "topic": "styling",
+    "difficulty": 2,
+    "type": "pick-the-code",
+    "prompt": "Шрифт лежит в проекте файлом. Какое объявление верное?",
+    "options": [
+      {
+        "id": "a",
+        "label": "правило font-face",
+        "code": {
+          "language": "css",
+          "content": "@font-face {\n  font-family: 'MyFont';\n  src: url('./my-font.woff2');\n}"
+        },
+        "feedback": "Рабочий CSS, но мимо `next/font`: оптимизации и подбора запасного шрифта не будет."
+      },
+      {
+        "id": "b",
+        "label": "локальный по имени",
+        "code": {
+          "language": "ts",
+          "content": "import localFont from 'next/font/local'\n\nconst my = localFont({\n  family: 'MyFont',\n})"
+        },
+        "feedback": "Опции `family` у локального шрифта нет: нужен путь к файлу в `src`."
+      },
+      {
+        "id": "c",
+        "label": "локальный с src",
+        "code": {
+          "language": "ts",
+          "content": "import localFont from 'next/font/local'\n\nconst my = localFont({\n  src: './my-font.woff2',\n})"
+        },
+        "feedback": "Верно: `next/font/local` принимает путь к файлу в опции `src`."
+      },
+      {
+        "id": "d",
+        "label": "имя из google",
+        "code": {
+          "language": "ts",
+          "content": "import { MyFont } from 'next/font/google'\n\nconst my = MyFont({\n  subsets: ['latin'],\n})"
+        },
+        "feedback": "`next/font/google` знает только шрифты каталога Google — собственный файл через него не подключить."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "Локальный шрифт подключают через `next/font/local`, передавая путь к файлу в опции `src`. Дальше механизм тот же, что и у шрифтов Google: файл включается в статику, отдаётся с вашего домена и получает подобранный запасной шрифт.\n\nОбычное правило `@font-face` тоже работает, но выводит шрифт из-под оптимизаций `next/font`.",
+    "docsUrl": "https://nextjs.org/docs/app/getting-started/fonts#local-fonts",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "font-subsets-preload",
+    "topic": "styling",
+    "difficulty": 3,
+    "type": "multiple-choice",
+    "prompt": "Опция `subsets` не указана у шрифта из `next/font/google`. Что произойдёт?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Шрифт подключится, но тега предзагрузки в `<head>` не появится: `subsets` перечисляет наборы символов, которые предзагружаются",
+        "feedback": "Верно: опция помечена в справочнике как необязательная, а влияет она на предзагрузку."
+      },
+      {
+        "id": "b",
+        "text": "Сборка упадёт: опция обязательна",
+        "feedback": "В справочнике опция помечена как Optional — сборка не упадёт."
+      },
+      {
+        "id": "c",
+        "text": "Загрузятся все наборы символов шрифта",
+        "feedback": "Наоборот: перечисление наборов сужает предзагрузку, а не расширяет её."
+      },
+      {
+        "id": "d",
+        "text": "Автоматически подставится `latin`",
+        "feedback": "Умолчания нет: без указания не предзагружается ничего."
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "`subsets` перечисляет наборы символов, которые вы хотите предзагрузить. Для указанных наборов в `<head>` вставляется тег предзагрузки — при условии, что включена опция `preload`, а она включена по умолчанию.\n\nВ справочнике опция помечена как **Optional**: без неё шрифт подключится, но предзагрузки не будет.",
+    "caveat": "В плане подготовки эта опция значилась обязательной — справочник v16.3.4 помечает её как Optional.",
+    "docsUrl": "https://nextjs.org/docs/app/api-reference/components/font#subsets",
     "nextVersion": "16.3"
   }
 ]

@@ -44,7 +44,7 @@ export const TOPIC_TITLES: Record<Topic, string> = {
 }
 
 /** Языки, которые точно умеет подсветить Shiki с нашим набором грамматик. */
-export const CODE_LANGUAGES = ['tsx', 'ts', 'jsx', 'js', 'json', 'bash'] as const
+export const CODE_LANGUAGES = ['tsx', 'ts', 'jsx', 'js', 'json', 'css', 'bash'] as const
 export type CodeLanguage = (typeof CODE_LANGUAGES)[number]
 
 export const DifficultySchema = z.union([z.literal(1), z.literal(2), z.literal(3)])
