@@ -12,8 +12,15 @@ export const TOPICS = [
   'rendering',
   'caching',
   'routing',
+  'navigation',
   'data-fetching',
+  'mutations',
   'conventions',
+  'errors',
+  'styling',
+  'metadata',
+  'security',
+  'deployment',
 ] as const
 
 export const TopicSchema = z.enum(TOPICS)
@@ -23,8 +30,15 @@ export const TOPIC_TITLES: Record<Topic, string> = {
   rendering: 'Server / Client компоненты',
   caching: 'Кэширование',
   routing: 'Роутинг',
+  navigation: 'Навигация и префетч',
   'data-fetching': 'Получение данных',
+  mutations: 'Server Actions и формы',
   conventions: 'Файловые конвенции',
+  errors: 'Обработка ошибок',
+  styling: 'Стили, шрифты, изображения',
+  metadata: 'Метаданные',
+  security: 'Аутентификация и безопасность',
+  deployment: 'Деплой и self-hosting',
 }
 
 /** Языки, которые точно умеет подсветить Shiki с нашим набором грамматик. */
