@@ -1,0 +1,148 @@
+[
+  {
+    "id": "i18n-root-params",
+    "topic": "routing",
+    "difficulty": 3,
+    "type": "multiple-choice",
+    "prompt": "Локаль нужна в глубоко вложенном компоненте и в утилитах получения данных. Как достать её, не прокидывая `lang` через каждый уровень?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Через `cookies()`: локаль надо продублировать в cookie при первом заходе"
+      },
+      {
+        "id": "b",
+        "text": "Через `next/root-params`: сегменты выше корневого layout становятся root-параметрами, и любой Server Component может вызвать их геттер"
+      },
+      {
+        "id": "c",
+        "text": "Через `useParams()` — хук работает и в Server Components"
+      },
+      {
+        "id": "d",
+        "text": "Через React context, объявленный в корневом layout"
+      }
+    ],
+    "correctOptionId": "b",
+    "explanation": "`next/root-params` экспортирует геттер для каждого динамического сегмента, стоящего выше корневого layout. Раз все роуты вложены в `app/[lang]`, `lang` — root-параметр, и его геттер доступен любому Server Component или серверной утилите.\n\nПрактический выигрыш: поиск локали переезжает внутрь самой утилиты. `getDictionary()` вызывает `await lang()` сама, и вызывающим больше не нужно передавать `lang` аргументом.",
+    "distractors": [
+      "Вариант с React context не сработает: context в Server Components не поддерживается.",
+      "Вариант с `useParams()` называет клиентский хук — в Server Component его не вызвать.",
+      "Вариант с дублированием локали в cookie решает задачу окольным путём и добавляет источник рассинхронизации: локаль уже есть в URL."
+    ],
+    "footnote": "Полезно совместить с проверкой: если значение не входит в список словарей, вызвать `notFound()` прямо в геттере словаря.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/internationalization#sharing-the-locale-across-your-app",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "i18n-locale-detection",
+    "topic": "routing",
+    "difficulty": 2,
+    "type": "multiple-choice",
+    "prompt": "Откуда брать предпочитаемый язык пользователя и где на его основе делать редирект?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Из заголовка `Accept-Language` входящего запроса, а редирект — в `proxy.ts`"
+      },
+      {
+        "id": "b",
+        "text": "Из `navigator.language` в клиентском компоненте, редирект через `useRouter`"
+      },
+      {
+        "id": "c",
+        "text": "Из cookie, которую пользователь обязан выставить сам на странице выбора языка"
+      },
+      {
+        "id": "d",
+        "text": "Из IP-адреса через геолокацию — язык определяется по стране"
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Документация рекомендует опираться на языковые предпочтения браузера: смена предпочитаемого языка меняет заголовок `Accept-Language` входящего запроса. Роутинг интернационализируется либо подпутём (`/fr/products`), либо доменом (`my-site.fr/products`), и, зная локаль, редирект делают в Proxy.\n\nProxy подходит именно потому, что выполняется до рендера роутов — это естественное место, чтобы централизовать логику редиректа.",
+    "distractors": [
+      "Вариант с `navigator.language` переносит решение на клиент: редирект произойдёт после загрузки страницы, с лишним переходом и миганием.",
+      "Вариант с обязательным ручным выбором ухудшает первый визит без нужды — предпочтения браузера уже пришли в запросе.",
+      "Вариант с геолокацией подменяет язык страной: это разные вещи, и в многоязычных странах такой вывод неверен."
+    ],
+    "docsUrl": "https://nextjs.org/docs/app/guides/internationalization#routing-overview",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "i18n-static-locales",
+    "topic": "routing",
+    "difficulty": 2,
+    "type": "predict-output",
+    "prompt": "Что даёт `generateStaticParams` в корневом layout при такой структуре?",
+    "code": {
+      "language": "tsx",
+      "content": "// app/[lang]/layout.tsx\nexport async function generateStaticParams() {\n  return [{ lang: 'en-US' }, { lang: 'de' }]\n}\n\nexport default async function RootLayout({ children, params }) {\n  return (\n    <html lang={(await params).lang}>\n      <body>{children}</body>\n    </html>\n  )\n}"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Ничего: `generateStaticParams` работает только в `page`, в layout она игнорируется"
+      },
+      {
+        "id": "b",
+        "text": "Пререндерятся все локали, какие найдутся в папке `dictionaries`"
+      },
+      {
+        "id": "c",
+        "text": "Роуты для перечисленных локалей пререндерятся на сборке; функция объявляется в любом page или layout, в том числе корневом"
+      },
+      {
+        "id": "d",
+        "text": "Локали фиксируются жёстко: запросы к другим вернут 404"
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "Чтобы сгенерировать статические роуты для набора локалей, `generateStaticParams` объявляют в любом page или layout. Глобально это удобно сделать в корневом layout — тогда перечисленные локали пререндерятся, а `lang` заодно попадает в атрибут `<html lang>`.",
+    "distractors": [
+      "Вариант про «только page» неверен: функция работает и в layout, и это как раз рекомендуемое место для локалей.",
+      "Вариант про автоматический обход папки словарей выдумывает поведение: список задаёте вы.",
+      "Вариант с 404 описывает поведение удалённого `dynamicParams: false`. При включённых Cache Components параметры не из списка рендерятся по запросу, а отвергать их надо явным `notFound()`."
+    ],
+    "footnote": "Помните про требование Cache Components: `generateStaticParams` не может вернуть пустой массив — нужен хотя бы один параметр.",
+    "docsUrl": "https://nextjs.org/docs/app/guides/internationalization#static-rendering",
+    "nextVersion": "16.3"
+  },
+  {
+    "id": "i18n-dictionaries",
+    "topic": "routing",
+    "difficulty": 2,
+    "type": "find-the-bug",
+    "prompt": "Словари всех локалей оказались в клиентском бандле. Что не так с этим кодом?",
+    "code": {
+      "language": "ts",
+      "content": "// app/[lang]/dictionaries.ts\nimport en from './dictionaries/en.json'\nimport nl from './dictionaries/nl.json'\n\nconst dictionaries = { en, nl }\n\nexport const getDictionary = async (locale: 'en' | 'nl') =>\n  dictionaries[locale]"
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "Проблема в имени папки: `dictionaries` — зарезервированное имя"
+      },
+      {
+        "id": "b",
+        "text": "Словари надо хранить не в JSON, а в TypeScript-модулях"
+      },
+      {
+        "id": "c",
+        "text": "Нужно добавить `'use server'` в начало файла"
+      },
+      {
+        "id": "d",
+        "text": "Статический импорт втягивает оба словаря в граф модулей; словари подключают динамическим `import()` по ключу локали, и тогда грузится только нужный"
+      }
+    ],
+    "correctOptionId": "d",
+    "explanation": "Документация подключает словари через функции с динамическим `import()`: `en: () => import('./dictionaries/en.json').then((m) => m.default)`. Обращение идёт по ключу локали, поэтому в дело идёт только нужный словарь, а не все сразу.\n\nСтатический импорт, как в примере, кладёт оба объекта в граф модулей — и если файл окажется в клиентском графе, оба уедут в браузер.",
+    "distractors": [
+      "Вариант про формат файла не относится к делу: проблема в способе импорта, а не в JSON.",
+      "Вариант про зарезервированное имя выдуман — такого ограничения нет.",
+      "Вариант с `'use server'` называет директиву для Server Functions, к загрузке словарей она отношения не имеет."
+    ],
+    "docsUrl": "https://nextjs.org/docs/app/guides/internationalization#localization",
+    "nextVersion": "16.3"
+  }
+]

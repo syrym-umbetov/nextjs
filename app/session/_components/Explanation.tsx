@@ -9,8 +9,14 @@ interface ExplanationProps {
   isCorrect: boolean
 }
 
-/** Больше в строку запроса класть незачем: длинные URL режут и браузеры, и сервисы. */
-const MAX_SELECTION = 600
+// Ограничения на длину: кириллица кодируется в URL по шесть символов на букву,
+// поэтому запрос раздувается втрое и легко упирается в лимиты на длину URL.
+const MAX_SELECTION = 400
+const MAX_CODE = 700
+
+function clip(text: string, limit: number): string {
+  return text.length > limit ? `${text.slice(0, limit)}\n…` : text
+}
 
 interface SelectionState {
   readonly text: string
@@ -18,21 +24,33 @@ interface SelectionState {
   readonly left: number
 }
 
-/** Собирает вопрос к Клоду вокруг выделенного фрагмента и его контекста. */
+/**
+ * Собирает вопрос к Клоду вокруг выделенного фрагмента и его контекста.
+ * Код из вопроса прикладывается, если он есть: без него разбор фрагмента
+ * вроде «здесь не хватает `<Suspense>`» повисает в воздухе.
+ */
 function buildClaudeUrl(selected: string, question: RenderedQuestion): string {
-  const fragment =
-    selected.length > MAX_SELECTION ? `${selected.slice(0, MAX_SELECTION)}…` : selected
-
-  const prompt = [
+  const lines = [
     `Объясни подробнее фрагмент разбора по документации Next.js ${question.nextVersion}:`,
     '',
-    `«${fragment}»`,
+    `«${clip(selected, MAX_SELECTION)}»`,
     '',
-    `Контекст — вопрос тренажёра: ${question.prompt}`,
-    `Раздел документации: ${question.docsUrl}`,
-  ].join('\n')
+    `Вопрос тренажёра: ${question.prompt}`,
+  ]
 
-  return `https://claude.ai/new?q=${encodeURIComponent(prompt)}`
+  if (question.code) {
+    lines.push(
+      '',
+      'Код из вопроса:',
+      '```' + question.code.language,
+      clip(question.code.content, MAX_CODE),
+      '```',
+    )
+  }
+
+  lines.push('', `Раздел документации: ${question.docsUrl}`)
+
+  return `https://claude.ai/new?q=${encodeURIComponent(lines.join('\n'))}`
 }
 
 export function Explanation({ question, isCorrect }: ExplanationProps) {
